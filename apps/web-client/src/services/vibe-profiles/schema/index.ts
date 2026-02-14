@@ -21,6 +21,20 @@ export const vibeEnergyEnum = pgEnum("vibe_energy", [
   "chaotic",
 ]);
 
+export const genderIdentityEnum = pgEnum("gender_identity", [
+  "male",
+  "female",
+  "non-binary",
+  "prefer-not-to-say",
+]);
+
+export const interestedInEnum = pgEnum("interested_in", [
+  "male",
+  "female",
+  "non-binary",
+  "everyone",
+]);
+
 // ============================================================================
 // Vibe Profiles Table
 // ============================================================================
@@ -35,6 +49,9 @@ export const vibeProfiles = pgTable(
     // AI-generated vibe card
     vibeName: text("vibe_name").notNull(),
     vibeSummary: text("vibe_summary"),
+    bio: text("bio"),
+    gender: genderIdentityEnum("gender"),
+    interestedIn: interestedInEnum("interested_in"),
     energy: vibeEnergyEnum("energy").notNull().default("moderate"),
     // Structured data
     moodTags: text("mood_tags")

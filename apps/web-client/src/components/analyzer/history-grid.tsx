@@ -1,10 +1,12 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
-import { Clock, MapPin, ChevronRight } from "lucide-react";
+import { Clock, MapPin, ChevronRight, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { StyleBadge } from "./style-badge";
 import type { AnalyzerSessionSummary, PredictedStyle } from "@/types/analyzer";
 
@@ -23,9 +25,13 @@ export function AnalyzerHistoryGrid({
 }: AnalyzerHistoryGridProps) {
   if (sessions.length === 0 && !isLoading) {
     return (
-      <div className="text-center py-16">
-        <p className="text-muted-foreground text-sm">
-          No analysis history yet. Run your first vibe check!
+      <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-16 text-center">
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-rose-500/10">
+          <Sparkles className="h-5 w-5 text-rose-500" />
+        </div>
+        <p className="text-sm font-medium">No analysis history yet</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Run your first vibe check to see beautiful session cards here.
         </p>
       </div>
     );
@@ -42,7 +48,7 @@ export function AnalyzerHistoryGrid({
             transition={{ delay: idx * 0.05 }}
           >
             <Link href={`/analyze-profile/${session.id}`}>
-              <Card className="group hover:shadow-lg transition-all cursor-pointer hover:border-primary/30">
+              <Card className="group h-full border-border/70 bg-card/80 transition-all hover:-translate-y-0.5 hover:border-rose-300/60 hover:shadow-lg">
                 <CardContent className="p-4 space-y-3">
                   {/* Style + time */}
                   <div className="flex items-center justify-between">
@@ -58,7 +64,7 @@ export function AnalyzerHistoryGrid({
                   </div>
 
                   {/* Vibe summary preview */}
-                  <p className="text-sm text-foreground/80 line-clamp-2">
+                  <p className="line-clamp-2 text-sm leading-6 text-foreground/85">
                     {(
                       session.vibePrediction as {
                         summary?: string;
@@ -76,7 +82,7 @@ export function AnalyzerHistoryGrid({
                     ) : (
                       <span />
                     )}
-                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <ChevronRight className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-rose-500" />
                   </div>
                 </CardContent>
               </Card>
@@ -89,9 +95,9 @@ export function AnalyzerHistoryGrid({
           Array.from({ length: 3 }).map((_, i) => (
             <Card key={`skel-${i}`}>
               <CardContent className="p-4 space-y-3">
-                <div className="h-6 w-24 bg-muted rounded animate-pulse" />
-                <div className="h-8 w-full bg-muted rounded animate-pulse" />
-                <div className="h-4 w-16 bg-muted rounded animate-pulse" />
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-4 w-16" />
               </CardContent>
             </Card>
           ))}
@@ -100,12 +106,13 @@ export function AnalyzerHistoryGrid({
       {/* Load more */}
       {hasMore && !isLoading && (
         <div className="text-center pt-2">
-          <button
+          <Button
             onClick={onLoadMore}
-            className="text-sm text-primary hover:underline"
+            variant="outline"
+            className="border-rose-200 hover:bg-rose-50"
           >
             Load more
-          </button>
+          </Button>
         </div>
       )}
     </div>

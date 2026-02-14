@@ -13,13 +13,16 @@ import {
 } from "@google/generative-ai";
 
 let genAI: GoogleGenerativeAI | null = null;
-let model: GenerativeModel | null = null;
+const modelCache = new Map<string, GenerativeModel>();
 
 const DEFAULT_JSON_RETRIES = 3;
 const RETRY_BASE_MS = 1000;
 
-export function getGeminiModel(): GenerativeModel {
-  if (model) return model;
+export function getGeminiModel(
+  modelName = "gemini-2.5-flash",
+): GenerativeModel {
+  const cachedModel = modelCache.get(modelName);
+  if (cachedModel) return cachedModel;
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -27,14 +30,16 @@ export function getGeminiModel(): GenerativeModel {
   }
 
   genAI = new GoogleGenerativeAI(apiKey);
-  model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
+  const model = genAI.getGenerativeModel({
+    model: modelName,
     generationConfig: {
       temperature: 0.7,
       topP: 0.95,
       maxOutputTokens: 8192,
     },
   });
+
+  modelCache.set(modelName, model);
 
   return model;
 }
@@ -67,8 +72,11 @@ function toInlineData(img: ImageInput): InlineDataPart {
 /**
  * Send a formatted prompt to Gemini and return the raw text response.
  */
-export async function generateFromPrompt(prompt: string): Promise<string> {
-  const gemini = getGeminiModel();
+export async function generateFromPrompt(
+  prompt: string,
+  modelName = "gemini-2.5-flash",
+): Promise<string> {
+  const gemini = getGeminiModel(modelName);
   const result = await gemini.generateContent(prompt);
   return result.response.text();
 }
@@ -77,8 +85,11 @@ export async function generateFromPrompt(prompt: string): Promise<string> {
  * Send a prompt and attempt to parse the response as JSON.
  * Strips markdown fences if the model wraps the output.
  */
-export async function generateJSON<T = unknown>(prompt: string): Promise<T> {
-  const raw = await generateFromPrompt(prompt);
+export async function generateJSON<T = unknown>(
+  prompt: string,
+  modelName = "gemini-2.5-flash",
+): Promise<T> {
+  const raw = await generateFromPrompt(prompt, modelName);
   return parseJsonResponse<T>(raw);
 }
 
@@ -93,8 +104,9 @@ export async function generateJSON<T = unknown>(prompt: string): Promise<T> {
 export async function generateFromMultimodal(
   prompt: string,
   images: ImageInput[],
+  modelName = "gemini-2.5-flash",
 ): Promise<string> {
-  const gemini = getGeminiModel();
+  const gemini = getGeminiModel(modelName);
   const parts: Part[] = [...images.map(toInlineData), { text: prompt }];
   const result = await gemini.generateContent(parts);
   return result.response.text();
@@ -108,6 +120,7 @@ export async function generateMultimodalJSON<T = unknown>(
   prompt: string,
   images: ImageInput[],
   retries = DEFAULT_JSON_RETRIES,
+  modelName = "gemini-2.5-flash",
 ): Promise<T> {
   let lastError: Error | null = null;
 
@@ -116,7 +129,11 @@ export async function generateMultimodalJSON<T = unknown>(
       const adjustedPrompt =
         attempt === 0 ? prompt : buildRetryPrompt(prompt, lastError, attempt);
 
-      const raw = await generateFromMultimodal(adjustedPrompt, images);
+      const raw = await generateFromMultimodal(
+        adjustedPrompt,
+        images,
+        modelName,
+      );
       return parseJsonResponse<T>(raw);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
@@ -139,6 +156,7 @@ export async function generateMultimodalJSON<T = unknown>(
 export async function generateJSONWithRetry<T = unknown>(
   prompt: string,
   retries = DEFAULT_JSON_RETRIES,
+  modelName = "gemini-2.5-flash",
 ): Promise<T> {
   let lastError: Error | null = null;
 
@@ -147,7 +165,7 @@ export async function generateJSONWithRetry<T = unknown>(
       const adjustedPrompt =
         attempt === 0 ? prompt : buildRetryPrompt(prompt, lastError, attempt);
 
-      const raw = await generateFromPrompt(adjustedPrompt);
+      const raw = await generateFromPrompt(adjustedPrompt, modelName);
       return parseJsonResponse<T>(raw);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));

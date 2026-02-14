@@ -54,6 +54,7 @@ export const verifications = pgTable(
       .defaultNow()
       .notNull(),
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
   },
   (table) => [

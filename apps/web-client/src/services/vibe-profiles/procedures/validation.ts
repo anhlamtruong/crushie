@@ -4,6 +4,20 @@
 
 import { z } from "zod";
 
+export const genderIdentitySchema = z.enum([
+  "male",
+  "female",
+  "non-binary",
+  "prefer-not-to-say",
+]);
+
+export const interestedInSchema = z.enum([
+  "male",
+  "female",
+  "non-binary",
+  "everyone",
+]);
+
 export const vibeQuizAnswersSchema = z.object({
   rainyFriday: z.enum(["vinyl_chill", "street_food_chaos"]).optional(),
   travelStyle: z.enum(["planned", "spontaneous"]).optional(),
@@ -37,6 +51,9 @@ export const vibeQuizAnswersSchema = z.object({
 export const createVibeProfileInput = z.object({
   vibeName: z.string().min(1).max(100),
   vibeSummary: z.string().max(500).optional(),
+  bio: z.string().max(500).optional(),
+  gender: genderIdentitySchema.optional(),
+  interestedIn: interestedInSchema.optional(),
   energy: z.enum(["chill", "moderate", "high", "chaotic"]).default("moderate"),
   moodTags: z.array(z.string().max(50)).max(20).default([]),
   styleTags: z.array(z.string().max(50)).max(20).default([]),
@@ -48,12 +65,24 @@ export const createVibeProfileInput = z.object({
 export const updateVibeProfileInput = z.object({
   vibeName: z.string().min(1).max(100).optional(),
   vibeSummary: z.string().max(500).optional(),
+  bio: z.string().max(500).optional(),
+  gender: genderIdentitySchema.optional(),
+  interestedIn: interestedInSchema.optional(),
   energy: z.enum(["chill", "moderate", "high", "chaotic"]).optional(),
   moodTags: z.array(z.string().max(50)).max(20).optional(),
   styleTags: z.array(z.string().max(50)).max(20).optional(),
   interestTags: z.array(z.string().max(50)).max(20).optional(),
   quizAnswers: vibeQuizAnswersSchema.optional(),
   photoUrls: z.array(z.string().url()).max(5).optional(),
+});
+
+export const updateMyProfileInput = z.object({
+  vibeName: z.string().min(1).max(100).optional(),
+  vibeSummary: z.string().max(500).optional(),
+  bio: z.string().max(500).optional(),
+  gender: genderIdentitySchema.optional(),
+  interestTags: z.array(z.string().max(50)).max(20).optional(),
+  interestedIn: interestedInSchema.optional(),
 });
 
 export const findSimilarInput = z.object({

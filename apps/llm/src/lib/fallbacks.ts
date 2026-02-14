@@ -197,3 +197,19 @@ export const COMPATIBILITY_FALLBACK: CompatibilityResult = {
   conversationStarter:
     "You both swiped right on life — what's the most random thing you've said yes to recently?",
 };
+
+// ============================================================================
+// Pipeline 4: Identity Verification Fallback
+// ============================================================================
+
+export type VerificationIdentityResult = {
+  is_match: boolean;
+  confidence: number;
+  reasoning: string;
+};
+
+export const VERIFICATION_FALLBACK: VerificationIdentityResult = {
+  is_match: false,
+  confidence: 0,
+  reasoning: "Verification service temporarily unavailable.",
+};

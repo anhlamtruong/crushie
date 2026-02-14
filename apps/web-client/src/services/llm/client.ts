@@ -109,6 +109,24 @@ export type LLMCompatibilityData = {
   conversationStarter: string;
 };
 
+// ── Identity verification types ───────────────────────────────────────────
+
+export type LLMImageInput = {
+  base64: string;
+  mimeType: string;
+};
+
+export type VerifyIdentityInput = {
+  profilePhoto: LLMImageInput;
+  freshSelfie: LLMImageInput;
+};
+
+export type VerifyIdentityResult = {
+  is_match: boolean;
+  confidence: number;
+  reasoning: string;
+};
+
 // ============================================================================
 // HTTP Client
 // ============================================================================
@@ -304,4 +322,14 @@ export async function evaluateMatch(input: {
     profileB: input.profileB,
     vectorSimilarity: input.vectorSimilarity,
   });
+}
+
+// ============================================================================
+// Pipeline 4: Identity Verification
+// ============================================================================
+
+export async function verifyIdentity(
+  input: VerifyIdentityInput,
+): Promise<LLMResponse<VerifyIdentityResult>> {
+  return llmFetch<VerifyIdentityResult>("/api/verify-identity", input);
 }

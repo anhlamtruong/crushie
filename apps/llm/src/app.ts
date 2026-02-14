@@ -12,6 +12,7 @@ import promptRouter from "./routes/prompt.js";
 import vibeProfileRouter from "./routes/vibe-profile.js";
 import analyzerRouter from "./routes/analyzer.js";
 import evaluateMatchRouter from "./routes/evaluate-match.js";
+import verifyIdentityRouter from "./routes/verify-identity.js";
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/api/prompt", promptRouter);
 app.use("/api/vibe-profile", vibeProfileRouter);
 app.use("/api/analyzer", analyzerRouter);
 app.use("/api/evaluate-match", evaluateMatchRouter);
+app.use("/api/verify-identity", verifyIdentityRouter);
 
 // Error handler
 app.use(

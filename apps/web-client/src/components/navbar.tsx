@@ -2,18 +2,22 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { VerificationBadge } from "@/components/verification-badge";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Palette,
-  UserSearch,
   Rocket,
   Menu,
   X,
   Heart,
   HeartHandshake,
+  UserRoundCog,
+  Compass,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
@@ -26,9 +30,14 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
-    label: "Love Profile",
+    label: "Crush Analyzer",
     href: "/analyze-profile",
     icon: HeartHandshake,
+  },
+  {
+    label: "Discover",
+    href: "/discover",
+    icon: Compass,
   },
   {
     label: "Onboard",
@@ -40,6 +49,11 @@ const navItems = [
     href: "/theme-editor",
     icon: Palette,
   },
+  {
+    label: "Vibe Profiles",
+    href: "/profile",
+    icon: UserRoundCog,
+  },
 ];
 
 // ============================================================================
@@ -49,6 +63,8 @@ const navItems = [
 export function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const trpc = useTRPC();
+  const userQuery = useQuery(trpc.users.getMe.queryOptions());
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -128,6 +144,10 @@ export function Navbar() {
             </SignedOut>
 
             <SignedIn>
+              <VerificationBadge
+                isVerified={Boolean(userQuery.data?.isVerified)}
+                className="hidden sm:inline-flex"
+              />
               <UserButton
                 appearance={{
                   elements: {
