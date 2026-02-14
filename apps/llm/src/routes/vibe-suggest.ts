@@ -15,7 +15,9 @@ import { compatibilityPrompt } from "../lib/vibe-prompts.js";
 import { COMPATIBILITY_FALLBACK, type CompatibilityResult } from "../lib/fallbacks.js";
 import { requireServiceToken } from "../lib/auth.js";
 import { getCachedResponse, setCachedResponse } from "../lib/redis.js";
-import { db } from "../lib/db.js"; // your database connection
+
+// TODO: NEED TO UPDATE PATH FOR DATABASE
+import { db } from "../lib/db.js";
 
 const router = Router();
 
