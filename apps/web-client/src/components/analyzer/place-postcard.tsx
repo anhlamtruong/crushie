@@ -15,12 +15,7 @@ export function PlacePostcard({ place, index = 0 }: PlacePostcardProps) {
   const formattedType = place.types
     .filter(
       (t) =>
-        ![
-          "point_of_interest",
-          "establishment",
-          "food",
-          "store",
-        ].includes(t),
+        !["point_of_interest", "establishment", "food", "store"].includes(t),
     )
     .slice(0, 2)
     .map((t) => t.replace(/_/g, " "))

@@ -11,13 +11,7 @@ interface MissionMapProps {
   userLocation?: { lat: number; lng: number } | null;
 }
 
-const MARKER_COLORS = [
-  "red",
-  "blue",
-  "green",
-  "purple",
-  "orange",
-] as const;
+const MARKER_COLORS = ["red", "blue", "green", "purple", "orange"] as const;
 
 /**
  * Build a Google Static Maps URL with multiple labeled markers for each mission

@@ -9,7 +9,10 @@ interface WeatherBannerProps {
   city: string;
 }
 
-const WEATHER_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+const WEATHER_ICONS: Record<
+  string,
+  React.ComponentType<{ className?: string }>
+> = {
   "01d": Sun,
   "01n": Sun,
   "02d": Cloud,

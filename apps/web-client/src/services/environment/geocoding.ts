@@ -31,9 +31,7 @@ export interface GeocodedLocation {
  * Search for cities matching a query string.
  * Uses Google Places Autocomplete (New) restricted to cities only.
  */
-export async function searchCities(
-  query: string,
-): Promise<CitySuggestion[]> {
+export async function searchCities(query: string): Promise<CitySuggestion[]> {
   if (!GOOGLE_MAPS_API_KEY || !query || query.length < 2) return [];
 
   try {

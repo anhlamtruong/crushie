@@ -21,9 +21,7 @@ export const getAnalyzerHistory = authedProcedure
       const conditions = [eq(analyzerSessions.userId, ctx.user.id)];
 
       if (input.cursor) {
-        conditions.push(
-          lt(analyzerSessions.createdAt, new Date(input.cursor)),
-        );
+        conditions.push(lt(analyzerSessions.createdAt, new Date(input.cursor)));
       }
 
       const sessions = await ctx.secureDb!.rls(async (tx) => {
