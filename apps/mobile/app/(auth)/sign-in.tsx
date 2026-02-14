@@ -164,9 +164,7 @@ export default function SignInScreen() {
           <View className="mb-2">
             <Icon name="heart" size={40} color="#f43f5e" />
           </View>
-          <Text className="text-3xl font-bold text-foreground">
-            Tinh Yêu Chu Chube
-          </Text>
+          <Text className="text-3xl font-bold text-foreground">Crushie</Text>
           <Text className="text-foreground-muted mt-1">
             {showEmailCode
               ? "Check your email for a verification code"

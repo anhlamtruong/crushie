@@ -94,6 +94,36 @@ export type VibeMatch = typeof vibeMatches.$inferSelect;
 export type NewVibeMatch = typeof vibeMatches.$inferInsert;
 
 // ============================================================================
+// Match Plan Cache (AI orchestration metadata)
+// ============================================================================
+export const matchPlanCache = pgTable(
+  "match_plan_cache",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    matchId: uuid("match_id")
+      .notNull()
+      .references(() => vibeMatches.id, { onDelete: "cascade" })
+      .unique(),
+    missionInstanceId: uuid("mission_instance_id"),
+    plan: jsonb("plan").notNull().default({}),
+    generatedAt: timestamp("generated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("idx_match_plan_cache_match").on(table.matchId),
+    index("idx_match_plan_cache_expires").on(table.expiresAt),
+  ],
+);
+
+export type MatchPlanCache = typeof matchPlanCache.$inferSelect;
+export type NewMatchPlanCache = typeof matchPlanCache.$inferInsert;
+
+// ============================================================================
 // Vibe Vouches (Friend-Filter)
 // ============================================================================
 export const vibeVouches = pgTable(

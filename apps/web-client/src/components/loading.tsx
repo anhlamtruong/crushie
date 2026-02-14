@@ -71,7 +71,7 @@ function DotPulse({ className }: { className?: string }) {
           }}
         />
       ))}
-      <style jsx>{`
+      <style>{`
         @keyframes dotPulse {
           0%,
           80%,
@@ -176,7 +176,7 @@ export function PageLoading({
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes loadingBar {
           0% {
             width: 0%;

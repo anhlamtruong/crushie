@@ -11,3 +11,7 @@ export { MissionMap } from "./mission-map";
 export { WeatherBanner } from "./weather-banner";
 export { PlacePostcard } from "./place-postcard";
 export { AnalyzerHistoryGrid } from "./history-grid";
+export { MetaGlassesSimulator } from "./meta-glasses-simulator";
+export { AnalyzerUploadZone } from "./analyzer-upload-zone";
+export { ContextBar } from "./context-bar";
+export { SidePrism } from "./side-prism";

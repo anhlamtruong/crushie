@@ -127,21 +127,22 @@ export const evaluateMatchProcedure = authedProcedure
         useMock: input.useMock,
       });
 
+      const effectiveScore =
+        compatibility.similarityScore ?? compatibility.score ?? 0;
+
       // 4. Save vibe match if score > 0.7
-      if (compatibility.score > 0.7) {
+      if (effectiveScore > 0.7) {
         await ctx.secureDb!.rls(async (tx) => {
           await tx
             .insert(vibeMatches)
             .values({
               userAId: ctx.user.id,
               userBId: input.targetUserId,
-              similarity: compatibility.score,
+              similarity: effectiveScore,
               compatibility: {
                 narrative: compatibility.narrative,
-                commonGround: compatibility.commonGround,
-                energyCompatibility: compatibility.energyCompatibility,
-                interestOverlap: compatibility.interestOverlap,
-                conversationStarter: compatibility.conversationStarter,
+                mission: compatibility.mission,
+                successProbability: compatibility.successProbability,
               },
             })
             .onConflictDoNothing();

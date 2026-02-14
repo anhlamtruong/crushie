@@ -69,9 +69,8 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              Tinh Yeu{" "}
               <span className="bg-linear-to-r from-primary via-pink-400 to-rose-400 bg-clip-text text-transparent">
-                Chuchube
+                Crushie
               </span>
             </motion.h1>
             <motion.p

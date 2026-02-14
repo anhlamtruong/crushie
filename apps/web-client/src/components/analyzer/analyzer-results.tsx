@@ -14,9 +14,16 @@ interface AnalyzerResultsProps {
   result: AnalyzerResult;
   onReset?: () => void;
   userLocation?: { lat: number; lng: number } | null;
+  /** When true, renders full detail cards (for standalone/detail pages). When false, omits sections handled by SidePrism. */
+  fullDetail?: boolean;
 }
 
-export function AnalyzerResults({ result, onReset, userLocation }: AnalyzerResultsProps) {
+export function AnalyzerResults({
+  result,
+  onReset,
+  userLocation,
+  fullDetail = true,
+}: AnalyzerResultsProps) {
   return (
     <motion.div
       key="results"
@@ -25,23 +32,28 @@ export function AnalyzerResults({ result, onReset, userLocation }: AnalyzerResul
       exit={{ opacity: 0 }}
       className="space-y-6"
     >
-      <StyleBadge style={result.predictedStyle} />
+      {/* Only show these sections in full detail mode (standalone pages) — SidePrism handles them in the new layout */}
+      {fullDetail && (
+        <>
+          <StyleBadge style={result.predictedStyle} />
 
-      <VibeAnalysisCard
-        vibePrediction={result.vibePrediction}
-        predictedStyle={result.predictedStyle}
-      />
+          <VibeAnalysisCard
+            vibePrediction={result.vibePrediction}
+            predictedStyle={result.predictedStyle}
+          />
 
-      <ConversationOpenersCard openers={result.conversationOpeners} />
+          <ConversationOpenersCard openers={result.conversationOpeners} />
 
-      {result.dateSuggestions.length > 0 && (
-        <DateSuggestionsCard
-          suggestions={result.dateSuggestions}
-          predictedStyle={result.predictedStyle}
-        />
+          {result.dateSuggestions.length > 0 && (
+            <DateSuggestionsCard
+              suggestions={result.dateSuggestions}
+              predictedStyle={result.predictedStyle}
+            />
+          )}
+        </>
       )}
 
-      {/* Mission Map — shows pins for date suggestions with coordinates */}
+      {/* Mission Map — always shown in main content area */}
       {result.dateSuggestions.length > 0 && (
         <MissionMap
           missions={result.dateSuggestions}

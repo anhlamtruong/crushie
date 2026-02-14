@@ -115,7 +115,7 @@ app.post("/generate-vibe", async (c) => {
   const { data, meta } = await generateVibeProfile({
     userId,
     imageUrls: body.imageUrls,
-    quizAnswers: body.quizAnswers,
+    extraContext: JSON.stringify(body.quizAnswers),
     photoUrls: body.photoUrls,
     useMock: body.useMock,
   });
@@ -133,7 +133,7 @@ app.post("/generate-vibe", async (c) => {
       moodTags: data.moodTags,
       styleTags: data.styleTags,
       interestTags: data.interestTags,
-      quizAnswers: data.quizAnswers,
+      quizAnswers: body.quizAnswers,
       photoUrls: data.photoUrls,
     })
     .onConflictDoUpdate({
@@ -145,7 +145,7 @@ app.post("/generate-vibe", async (c) => {
         moodTags: data.moodTags,
         styleTags: data.styleTags,
         interestTags: data.interestTags,
-        quizAnswers: data.quizAnswers,
+        quizAnswers: body.quizAnswers,
         photoUrls: data.photoUrls,
         isActive: true,
         updatedAt: new Date(),
@@ -164,15 +164,27 @@ app.post("/generate-vibe", async (c) => {
 app.post("/analyze-profile", async (c) => {
   const userId = c.var.userId;
   const body = await c.req.json<{
-    imageUrl: string;
+    imageUrls?: string[];
+    imageUrl?: string;
     imageHash: string;
     hintTags?: string[];
     useMock?: boolean;
   }>();
 
+  const imageUrls =
+    body.imageUrls && body.imageUrls.length > 0
+      ? body.imageUrls
+      : body.imageUrl
+        ? [body.imageUrl]
+        : [];
+
+  if (imageUrls.length === 0) {
+    return c.json({ error: "At least one image URL is required." }, 400);
+  }
+
   const { data, meta } = await callAnalyzeProfile({
     userId,
-    imageUrl: body.imageUrl,
+    imageUrls,
     imageHash: body.imageHash,
     hintTags: body.hintTags,
     useMock: body.useMock,

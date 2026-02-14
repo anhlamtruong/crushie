@@ -167,35 +167,27 @@ export const ANALYZER_FALLBACK: AnalyzerResult = {
 
 export type CompatibilityResult = {
   score: number;
+  similarityScore: number;
+  successProbability: number;
   narrative: string;
-  commonGround: string[];
-  energyCompatibility: {
-    description: string;
-    score: number;
+  mission: {
+    title: string;
+    task: string;
+    locationId: string;
   };
-  interestOverlap: {
-    shared: string[];
-    complementary: string[];
-  };
-  conversationStarter: string;
 };
 
 export const COMPATIBILITY_FALLBACK: CompatibilityResult = {
   score: 0.5,
+  similarityScore: 0.5,
+  successProbability: 56,
   narrative:
     "The AI couldn't fully analyze the compatibility right now — but that doesn't mean there isn't something there. Sometimes the best connections defy algorithms.",
-  commonGround: ["Both are on Tinhyeuchuchube — that's a start!"],
-  energyCompatibility: {
-    description:
-      "Energy compatibility couldn't be determined. Give it a shot and find out!",
-    score: 0.5,
+  mission: {
+    title: "Valentine Warm-Up Quest",
+    task: "Meet for a 20-minute coffee check-in and each share one unexpected story.",
+    locationId: "fallback_place",
   },
-  interestOverlap: {
-    shared: [],
-    complementary: [],
-  },
-  conversationStarter:
-    "You both swiped right on life — what's the most random thing you've said yes to recently?",
 };
 
 // ============================================================================

@@ -1,4 +1,4 @@
-import { Logo } from "@/components/ui/logo";
+import Logo from "@/services/vibe-profiles/components/logo";
 import { ClerkLoaded, ClerkLoading, SignUp } from "@clerk/nextjs";
 import { Loader2 } from "lucide-react";
 

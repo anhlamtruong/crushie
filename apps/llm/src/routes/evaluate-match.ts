@@ -44,7 +44,48 @@ const evaluateMatchSchema = z.object({
   profileB: profileSummarySchema,
   /** Pre-computed cosine similarity from pgvector (optional) */
   vectorSimilarity: z.number().min(0).max(1).optional(),
+  environmentContext: z
+    .object({
+      city: z.string().min(1),
+      weather: z
+        .object({
+          condition: z.enum(["Rain", "Clear"]),
+          description: z.string().min(1),
+          temp: z.number(),
+        })
+        .optional(),
+    })
+    .optional(),
+  placeCandidates: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        placeId: z.string().min(1),
+        district: z.string().min(1),
+        placeType: z.string().min(1),
+        types: z.array(z.string()).default([]),
+        isIndoor: z.boolean(),
+      }),
+    )
+    .min(1)
+    .max(5)
+    .optional(),
 });
+
+const missionPlanSchema = z
+  .object({
+    mission: z
+      .object({
+        title: z.string().min(1),
+        task: z.string().min(1),
+        locationId: z.string().min(1),
+      })
+      .strict(),
+    similarityScore: z.number().min(0).max(1),
+    successProbability: z.number().int().min(0).max(100),
+    narrative: z.string().min(1),
+  })
+  .strict();
 
 // ──────────────────────────────────────────────────────────────────────────
 // POST / — Evaluate compatibility via Gemini (production)
@@ -52,9 +93,13 @@ const evaluateMatchSchema = z.object({
 
 router.post("/", requireServiceToken(), async (req, res) => {
   try {
-    const { profileA, profileB, vectorSimilarity } = evaluateMatchSchema.parse(
-      req.body,
-    );
+    const {
+      profileA,
+      profileB,
+      vectorSimilarity,
+      environmentContext,
+      placeCandidates,
+    } = evaluateMatchSchema.parse(req.body);
 
     const startTime = Date.now();
 
@@ -77,10 +122,19 @@ router.post("/", requireServiceToken(), async (req, res) => {
           moodTags: profileB.moodTags,
           styleTags: profileB.styleTags,
         },
+        placeCandidates: placeCandidates ?? [],
       },
-      vectorSimilarity != null
-        ? { preComputedVectorSimilarity: vectorSimilarity }
-        : undefined,
+      {
+        ...(vectorSimilarity != null
+          ? { preComputedVectorSimilarity: vectorSimilarity }
+          : {}),
+        ...(environmentContext
+          ? {
+              weather: environmentContext.weather,
+              city: environmentContext.city,
+            }
+          : {}),
+      },
     );
 
     // Check cache
@@ -105,13 +159,54 @@ router.post("/", requireServiceToken(), async (req, res) => {
     let usedFallback = false;
 
     try {
-      result = await generateJSONWithRetry<CompatibilityResult>(prompt, 2);
+      const generated = await generateJSONWithRetry<CompatibilityResult>(
+        prompt,
+        2,
+      );
+      const parsed = missionPlanSchema.parse(generated);
+      result = {
+        ...parsed,
+        score: parsed.similarityScore,
+      };
+
+      if (placeCandidates?.length) {
+        const validPlace = placeCandidates.some(
+          (item) => item.placeId === result.mission.locationId,
+        );
+        if (!validPlace) {
+          throw new Error(
+            "LLM selected mission location outside provided candidate set",
+          );
+        }
+      }
+
+      if (
+        environmentContext?.weather?.condition === "Rain" &&
+        placeCandidates?.length
+      ) {
+        const selected = placeCandidates.find(
+          (item) => item.placeId === result.mission.locationId,
+        );
+        if (selected && !selected.isIndoor) {
+          throw new Error("Rain condition requires indoor location");
+        }
+      }
     } catch (llmError) {
       console.error(
         "❌ Gemini compatibility evaluation failed, using fallback:",
         llmError,
       );
-      result = COMPATIBILITY_FALLBACK;
+      const fallbackLocation =
+        placeCandidates?.[0]?.placeId ??
+        COMPATIBILITY_FALLBACK.mission.locationId;
+      result = {
+        ...COMPATIBILITY_FALLBACK,
+        score: COMPATIBILITY_FALLBACK.similarityScore,
+        mission: {
+          ...COMPATIBILITY_FALLBACK.mission,
+          locationId: fallbackLocation,
+        },
+      };
       usedFallback = true;
     }
 
@@ -149,7 +244,9 @@ router.post("/", requireServiceToken(), async (req, res) => {
 
 router.post("/mock", async (req, res) => {
   try {
-    const { profileA, profileB } = evaluateMatchSchema.parse(req.body);
+    const { profileA, profileB, placeCandidates } = evaluateMatchSchema.parse(
+      req.body,
+    );
 
     const startTime = Date.now();
 
@@ -161,29 +258,28 @@ router.post("/mock", async (req, res) => {
       0.4 + sharedInterests.length * 0.12 + Math.random() * 0.1,
       1.0,
     );
-    const score = Math.round(baseScore * 100) / 100;
+    const similarityScore = Math.round(baseScore * 100) / 100;
+    const successProbability = Math.round(
+      Math.min(96, 45 + similarityScore * 50),
+    );
+
+    const selectedPlaceId =
+      placeCandidates?.[Math.floor(Math.random() * placeCandidates.length)]
+        ?.placeId ?? "mock_place";
 
     const result: CompatibilityResult = {
-      score,
+      score: similarityScore,
+      similarityScore,
+      successProbability,
       narrative:
-        score > 0.7
+        similarityScore > 0.7
           ? `${profileA.vibeName} meets ${profileB.vibeName} — there's a genuine spark here. You share ${sharedInterests.length > 0 ? sharedInterests.join(", ") : "a certain energy"} that could lead somewhere interesting.`
           : `${profileA.vibeName} and ${profileB.vibeName} are different flavors — but sometimes that's where the best stories start. One of you will have to make the first move.`,
-      commonGround:
-        sharedInterests.length > 0
-          ? sharedInterests
-          : ["Both on Tinhyeuchuchube", "Open to new connections"],
-      energyCompatibility: {
-        description: `${profileA.energy} meets ${profileB.energy}`,
-        score: profileA.energy === profileB.energy ? 0.9 : 0.65,
+      mission: {
+        title: "Cupid's Micro-Quest",
+        task: "Find one menu item for each other and explain why it fits their vibe.",
+        locationId: selectedPlaceId,
       },
-      interestOverlap: {
-        shared: sharedInterests,
-        complementary: profileA.interestTags
-          .filter((t) => !profileB.interestTags.includes(t))
-          .slice(0, 2),
-      },
-      conversationStarter: `You both seem like ${sharedInterests[0] ?? "interesting"} people — start there.`,
     };
 
     const durationMs = Date.now() - startTime;

@@ -13,7 +13,11 @@ import {
   WeatherBanner,
   PlacePostcard,
 } from "@/components/analyzer";
-import type { AnalyzerResult, WeatherContext, NearbyPlace } from "@/types/analyzer";
+import type {
+  AnalyzerResult,
+  WeatherContext,
+  NearbyPlace,
+} from "@/types/analyzer";
 
 export default function AnalyzerSessionDetailPage({
   params,
@@ -120,6 +124,16 @@ export default function AnalyzerSessionDetailPage({
                 {result.city}
               </span>
             )}
+
+            <Link href={`/analyze-profile/${id}/simulator`}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-rose-400/40 text-rose-300 hover:bg-rose-500/10"
+              >
+                Launch Simulator Mode
+              </Button>
+            </Link>
           </div>
         </motion.div>
 

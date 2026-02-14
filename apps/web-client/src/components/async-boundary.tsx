@@ -30,7 +30,7 @@ export function AsyncBoundary({
         // 2. Catches Errors (throwing)
         <ErrorBoundary
           onReset={reset}
-          fallbackRender={errorFallback || DefaultError}
+          fallbackRender={(errorFallback || DefaultError) as any}
         >
           {/* 3. Catches Loading (suspending) */}
           <Suspense fallback={loadingFallback}>{children}</Suspense>
@@ -57,7 +57,7 @@ function DefaultLoading() {
   );
 }
 
-function DefaultError({ error, resetErrorBoundary }: FallbackProps) {
+function DefaultError({ error, resetErrorBoundary }: FallbackProps): ReactNode {
   return (
     <div className="flex items-center justify-center p-6 border border-destructive/50 bg-destructive/5 rounded-lg">
       <div className="text-center space-y-4">

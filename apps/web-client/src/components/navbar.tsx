@@ -99,7 +99,7 @@ export function Navbar() {
               <HeartIcon className="h-4 w-4 text-primary-foreground" />
             </motion.div>
             <span className="hidden text-lg font-bold tracking-tight text-foreground sm:inline-block">
-              Tinh Yeu Chuchube <span className="text-primary">♥</span>
+              Crushie <span className="text-primary">♥</span>
             </span>
           </Link>
 

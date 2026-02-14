@@ -1,4 +1,4 @@
-# SYSTEM_DESIGN.md — Tinhyeuchuchube "Date-Coach" Platform
+# SYSTEM_DESIGN.md — Crushie "Date-Coach" Platform
 
 > Complete data schema, system architecture, API specs, RLS policy map.
 

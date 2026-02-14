@@ -96,17 +96,44 @@ export type LLMAnalyzerData = {
 
 export type LLMCompatibilityData = {
   score: number;
+  similarityScore: number;
+  successProbability: number;
   narrative: string;
-  commonGround: string[];
-  energyCompatibility: {
+  mission: {
+    title: string;
+    task: string;
+    locationId: string;
+  };
+  commonGround?: string[];
+  energyCompatibility?: {
     description: string;
     score: number;
   };
-  interestOverlap: {
+  interestOverlap?: {
     shared: string[];
     complementary: string[];
   };
-  conversationStarter: string;
+  conversationStarter?: string;
+};
+
+export type MatchPlanPlaceCandidate = {
+  name: string;
+  placeId: string;
+  district: string;
+  placeType: string;
+  types: string[];
+  isIndoor: boolean;
+};
+
+export type LLMMissionPlanData = LLMCompatibilityData;
+
+export type MatchPlanEnvironmentContext = {
+  city: string;
+  weather?: {
+    condition: "Rain" | "Clear";
+    description: string;
+    temp: number;
+  };
 };
 
 // ── Identity verification types ───────────────────────────────────────────
@@ -125,6 +152,12 @@ export type VerifyIdentityResult = {
   is_match: boolean;
   confidence: number;
   reasoning: string;
+};
+
+export type LiveSuggestionData = {
+  suggestion: string;
+  visual_cue_detected: string;
+  confidence: number;
 };
 
 // ============================================================================
@@ -312,6 +345,8 @@ export async function evaluateMatch(input: {
   profileB: ProfileSummary;
   vectorSimilarity?: number;
   useMock?: boolean;
+  environmentContext?: MatchPlanEnvironmentContext;
+  placeCandidates?: MatchPlanPlaceCandidate[];
 }): Promise<LLMResponse<LLMCompatibilityData>> {
   const endpoint = input.useMock
     ? "/api/evaluate-match/mock"
@@ -321,6 +356,8 @@ export async function evaluateMatch(input: {
     profileA: input.profileA,
     profileB: input.profileB,
     vectorSimilarity: input.vectorSimilarity,
+    environmentContext: input.environmentContext,
+    placeCandidates: input.placeCandidates,
   });
 }
 
@@ -332,4 +369,22 @@ export async function verifyIdentity(
   input: VerifyIdentityInput,
 ): Promise<LLMResponse<VerifyIdentityResult>> {
   return llmFetch<VerifyIdentityResult>("/api/verify-identity", input);
+}
+
+// ============================================================================
+// Realtime Coach
+// ============================================================================
+
+export async function getLiveSuggestion(input: {
+  frame: string;
+  targetVibe: string;
+  currentTopic?: string;
+  language?: string;
+}): Promise<LLMResponse<LiveSuggestionData>> {
+  return llmFetch<LiveSuggestionData>("/api/realtime-coach", {
+    frame: input.frame,
+    targetVibe: input.targetVibe,
+    currentTopic: input.currentTopic ?? "",
+    language: input.language ?? "Respond in English.",
+  });
 }

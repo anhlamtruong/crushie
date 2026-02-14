@@ -1,7 +1,7 @@
 /**
  * Vibe Coach Prompt Templates
  *
- * Domain-specific prompt templates for Tinhyeuchuchube's three core pipelines:
+ * Domain-specific prompt templates for Crushie's three core pipelines:
  *   1. Vibe Generation (self-onboarding)
  *   2. Profile Analyzer (tactical advice)
  *   3. Compatibility Engine (vibe match)
@@ -20,7 +20,7 @@ import { createPromptTemplate } from "./prompt-formatter.js";
  * The images are passed separately via Gemini's multimodal API.
  */
 export const vibeGenerationPrompt = createPromptTemplate({
-  role: "Expert personality analyst and creative branding strategist for a dating platform called Tinhyeuchuchube. You specialize in reading visual cues from photos (clothing, scenery, lighting, body language) and synthesizing them with user-provided hint tags and free-text context to create authentic, appealing dating profiles.",
+  role: "Expert personality analyst and creative branding strategist for a dating platform called Crushie. You specialize in reading visual cues from photos (clothing, scenery, lighting, body language) and synthesizing them with user-provided hint tags and free-text context to create authentic, appealing dating profiles.",
   task: "Analyze the provided images along with optional hint tags and extra context to generate a high-fidelity 'Vibe Card' — a creative personality profile that goes far beyond a typical bio. The vibe card should feel like a magazine profile blurb that makes someone instantly intriguing.",
   rules: [
     "Return ONLY valid JSON — no markdown, no explanation, no preamble",
@@ -406,32 +406,32 @@ export const profileAnalyzerPrompt = createPromptTemplate({
 // ============================================================================
 
 export const compatibilityPrompt = createPromptTemplate({
-  role: "Expert relationship compatibility analyst for the Tinhyeuchuchube dating platform. You specialize in finding genuine connection points between two people based on their vibe profiles, interests, and communication styles. You write narratives that make people excited to meet.",
-  task: "Compare two user profiles and generate a compatibility assessment. Find genuine synergy — not just surface similarities. If the score is above 0.7, generate a compelling 'Synergy Narrative' that explains WHY they'd work well together.",
+  role: "Expert relationship compatibility analyst and game designer for the Crushie dating platform. You create high-fidelity interaction plans using two vibe profiles and real-world environment context.",
+  task: "Generate one mission briefing for a matched pair. Select exactly one place from provided candidates, compute compatibility and success odds, and explain why this mission works for both people.",
   rules: [
     "Return ONLY valid JSON — no markdown, no explanation, no preamble",
-    "score must be a float between 0.0 and 1.0 — be honest, not everyone is compatible",
-    "narrative should be 2-3 sentences and feel personal, not formulaic",
-    "commonGround must list 3-5 specific shared traits or complementary qualities found by analysis",
-    "If score < 0.7, narrative should still be encouraging but realistic",
-    "Consider complementary traits (e.g., 'chill' + 'chaotic' can work) — not just identical ones",
-    "Factor in energy levels, interests, communication styles, and lifestyle compatibility",
-    "The narrative should make both people want to connect",
+    "Output object must contain exactly 4 top-level keys: mission, similarityScore, successProbability, narrative",
+    "mission must contain exactly: title, task, locationId",
+    "title should be Valentine-themed and concise",
+    "task must be gamified, specific, and actionable in one meetup",
+    "locationId must be one of the provided placeCandidates.placeId values",
+    "similarityScore must be a float from 0.0 to 1.0",
+    "successProbability must be an integer percentage from 0 to 100",
+    "narrative should be 2-3 sentences and feel pair-specific",
+    "Use vibe overlap + complementary traits + energy alignment to estimate successProbability",
+    "Do not invent places beyond provided placeCandidates",
+    "If context.weather.condition is 'Rain', choose a place candidate where isIndoor is true",
+    "Use place name and district context only; do not output coordinates",
   ],
   output: {
-    score: "number 0.0-1.0 — overall compatibility score",
-    narrative: "string — 2-3 sentence synergy narrative explaining the match",
-    commonGround: ["string — 3-5 specific shared or complementary traits"],
-    energyCompatibility: {
-      description: "string — how their energy levels interact",
-      score: "number 0.0-1.0",
+    mission: {
+      title: "string — Valentine-themed mission title",
+      task: "string — gamified objective",
+      locationId: "string — selected placeId from placeCandidates",
     },
-    interestOverlap: {
-      shared: ["string — interests they have in common"],
-      complementary: ["string — different interests that work well together"],
-    },
-    conversationStarter:
-      "string — a conversation starter based on their shared ground",
+    similarityScore: "number 0.0-1.0",
+    successProbability: "number 0-100",
+    narrative: "string — why this mission works for this pair",
   },
   examples: [
     {
@@ -461,32 +461,38 @@ export const compatibilityPrompt = createPromptTemplate({
           summary:
             "Deep thinker, loves late-night conversations, values authenticity over flash.",
         },
+        placeCandidates: [
+          {
+            name: "Brave Roasters",
+            placeId: "place_1",
+            district: "Sukhumvit",
+            placeType: "cafe",
+            types: ["cafe", "food"],
+            isIndoor: true,
+          },
+          {
+            name: "Lumpini Park",
+            placeId: "place_2",
+            district: "Silom",
+            placeType: "park",
+            types: ["park"],
+            isIndoor: false,
+          },
+        ],
+        context: {
+          weather: { condition: "Clear", description: "clear sky", temp: 30 },
+        },
       },
       output: {
-        score: 0.84,
+        mission: {
+          title: "Rose Latte Signal",
+          task: "At Brave Roasters, each person picks one drink for the other and explains the choice in one sentence.",
+          locationId: "place_1",
+        },
+        similarityScore: 0.84,
+        successProbability: 82,
         narrative:
-          "You're both curators — one of spaces, the other of ideas. The best coffee shop in the city hasn't been found yet, but you two will find it at 11 PM on a Tuesday and stay until they kick you out.",
-        commonGround: [
-          "Appreciation for curated, intentional experiences",
-          "Both value depth over surface-level interaction",
-          "Complementary creative outlets (visual vs written)",
-          "Shared love of analog culture (vinyl, bookstores)",
-          "Both prefer intimate settings over crowds",
-        ],
-        energyCompatibility: {
-          description:
-            "Chill meets moderate — grounded enough to sync but different enough to inspire growth.",
-          score: 0.82,
-        },
-        interestOverlap: {
-          shared: ["analog culture", "café culture", "arts appreciation"],
-          complementary: [
-            "Architecture (visual) + Philosophy (conceptual)",
-            "Film photography + Documentary films",
-          ],
-        },
-        conversationStarter:
-          "You both seem like the type who has a 'spot' — a café or bookstore that nobody else knows about. Swap locations?",
+          "Both profiles value curated experiences and deep conversation, so a cozy café challenge creates instant shared context. Their energy levels are adjacent enough to feel easy while still exciting. The mission turns chemistry into playful action without social pressure.",
       },
     },
   ],

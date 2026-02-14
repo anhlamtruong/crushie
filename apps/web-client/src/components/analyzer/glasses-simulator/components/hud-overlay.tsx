@@ -1,0 +1,236 @@
+"use client";
+
+import { Battery, Wifi, Signal } from "lucide-react";
+import type {
+  GlassesConfig,
+  GlassesTheme,
+  GlassesFrameType,
+  LanguageOption,
+  ContextEntry,
+} from "../types";
+import { AudioWaveform } from "./audio-waveform";
+import { DiagnosticLog } from "./diagnostic-log";
+import { LanguagePicker } from "./language-picker";
+import { CrushieDisplay } from "./crushie-display";
+import { ContextPanel } from "./context-panel";
+
+interface HudOverlayProps {
+  config: GlassesConfig;
+  theme: GlassesTheme;
+  frameType: GlassesFrameType;
+  clockStr: string;
+  nightVision: boolean;
+  language: LanguageOption;
+  languages: LanguageOption[];
+  onLanguageChange: (lang: LanguageOption) => void;
+  suggestion: string;
+  visualCue: string;
+  isPending: boolean;
+  isListening: boolean;
+  voiceInput: string;
+  diagnosticLog: string[];
+  contextEntries: ContextEntry[];
+  confidence: number;
+  targetVibe: string;
+  screenshotFlash: boolean;
+}
+
+export function HudOverlay({
+  config,
+  theme,
+  frameType,
+  clockStr,
+  nightVision,
+  language,
+  languages,
+  onLanguageChange,
+  suggestion,
+  visualCue,
+  isPending,
+  isListening,
+  voiceInput,
+  diagnosticLog: diagLog,
+  contextEntries,
+  confidence,
+  targetVibe,
+  screenshotFlash,
+}: HudOverlayProps) {
+  return (
+    <div
+      className={`pointer-events-none absolute inset-0 ${theme.hudClass}`}
+      style={{
+        animation: "hud-flicker 3s ease-in-out infinite",
+        fontFamily:
+          'ui-monospace, "JetBrains Mono", "SF Mono", SFMono-Regular, Menlo, Consolas, monospace',
+      }}
+    >
+      {/* ── TOP-LEFT: Status bar ── */}
+      <div className="absolute left-[8%] top-[8%] flex items-center gap-2">
+        <span
+          className={`font-mono text-[8px] tracking-wider ${theme.textDim}`}
+          style={{ textShadow: `0 0 4px ${theme.glow}` }}
+        >
+          {clockStr}
+        </span>
+        <Battery
+          className={`h-2.5 w-2.5 ${theme.textDim}`}
+          style={{ filter: `drop-shadow(0 0 3px ${theme.glow})` }}
+        />
+        <Wifi
+          className={`h-2.5 w-2.5 ${theme.textDim}`}
+          style={{ filter: `drop-shadow(0 0 3px ${theme.glow})` }}
+        />
+        <Signal
+          className={`h-2.5 w-2.5 ${theme.textDim}`}
+          style={{ filter: `drop-shadow(0 0 3px ${theme.glow})` }}
+        />
+        <span
+          className={`font-mono text-[7px] uppercase tracking-[0.2em] ${theme.textDim}`}
+        >
+          {config.subtitle}
+        </span>
+        {nightVision && (
+          <span
+            className="font-mono text-[7px] uppercase tracking-wider text-green-400/80"
+            style={{ textShadow: "0 0 6px rgba(34,197,94,0.6)" }}
+          >
+            NV
+          </span>
+        )}
+      </div>
+
+      {/* ── TOP-LEFT (row 2): Language picker ── */}
+      <div className="absolute left-[8%] top-[15%]">
+        <LanguagePicker
+          languages={languages}
+          selected={language}
+          onChange={onLanguageChange}
+          theme={theme}
+        />
+      </div>
+
+      {/* ── LEFT-CENTER: Context Panel ── */}
+      <div className="absolute left-[8%] top-[24%]">
+        <ContextPanel entries={contextEntries} theme={theme} />
+      </div>
+
+      {/* ── TOP-RIGHT: Crushie Suggestion Box ── */}
+      <div className="absolute right-[8%] top-[10%]">
+        <CrushieDisplay
+          suggestion={suggestion}
+          visualCue={visualCue}
+          isPending={isPending}
+          theme={theme}
+          languageFlag={language.flag}
+        />
+      </div>
+
+      {/* Screenshot flash */}
+      {screenshotFlash && (
+        <div className="pointer-events-none absolute inset-0 animate-pulse bg-white/10" />
+      )}
+
+      {/* ── BOTTOM-LEFT: Voice Waveform + intake ── */}
+      <div className="absolute bottom-[10%] left-[8%] flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <AudioWaveform
+            active={isListening}
+            accentClass={`${theme.accent} bg-current`}
+            glowColor={theme.glow}
+          />
+          <span
+            className={`font-mono text-[7px] uppercase tracking-[0.15em] ${theme.textDim}`}
+          >
+            {isListening ? "INTAKE ACTIVE" : "INTAKE IDLE"}
+          </span>
+        </div>
+        {voiceInput && (
+          <p
+            className={`max-w-45 truncate font-mono text-[8px] ${theme.text}`}
+            style={{ textShadow: `0 0 6px ${theme.glow}` }}
+          >
+            &quot;{voiceInput}&quot;
+          </p>
+        )}
+      </div>
+
+      {/* ── BOTTOM-RIGHT: Diagnostic Log + Vibe Badge ── */}
+      <div className="absolute bottom-[10%] right-[8%] flex flex-col items-end gap-1">
+        <DiagnosticLog
+          entries={diagLog}
+          textClass={theme.text}
+          dimClass={theme.textDim}
+        />
+        <div
+          className={`rounded-full ${theme.border} border ${theme.panelBg} px-2 py-0.5 backdrop-blur-sm`}
+        >
+          <span
+            className={`font-mono text-[7px] uppercase tracking-widest ${theme.accent}`}
+            style={{ textShadow: `0 0 6px ${theme.glow}` }}
+          >
+            {targetVibe.length > 28
+              ? targetVibe.slice(0, 28) + "…"
+              : targetVibe}{" "}
+            Synchronized
+          </span>
+        </div>
+      </div>
+
+      {/* ── Aviator: Targeting brackets ── */}
+      {frameType === "aviator" && (
+        <>
+          {(
+            [
+              "left-[12%] top-[14%]",
+              "right-[12%] top-[14%]",
+              "bottom-[14%] left-[12%]",
+              "bottom-[14%] right-[12%]",
+            ] as const
+          ).map((pos, i) => (
+            <span
+              key={pos}
+              className={`absolute ${pos} font-mono text-[10px] text-amber-400/40`}
+              style={{
+                filter: "drop-shadow(0 0 4px rgba(251,191,36,0.3))",
+              }}
+            >
+              {["┌", "┐", "└", "┘"][i]}
+            </span>
+          ))}
+        </>
+      )}
+
+      {/* ── Sport: Energy bar ── */}
+      {frameType === "sport" && (
+        <div className="absolute bottom-[22%] left-[8%] flex items-center gap-1">
+          <span className="font-mono text-[7px] uppercase tracking-wider text-fuchsia-400/60">
+            NRG
+          </span>
+          <div className="flex gap-[1.5px]">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <span
+                key={i}
+                className="inline-block h-1.5 w-1 rounded-[1px]"
+                style={{
+                  backgroundColor:
+                    i < Math.ceil(confidence * 10)
+                      ? i < 4
+                        ? "rgba(232,121,249,0.7)"
+                        : i < 7
+                          ? "rgba(232,121,249,0.5)"
+                          : "rgba(232,121,249,0.3)"
+                      : "rgba(232,121,249,0.1)",
+                  filter:
+                    i < Math.ceil(confidence * 10)
+                      ? "drop-shadow(0 0 3px rgba(232,121,249,0.5))"
+                      : "none",
+                  transform: "skewX(-8deg)",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

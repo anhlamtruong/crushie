@@ -6,9 +6,15 @@ import {
   removeConnection,
 } from "./connections";
 import { listMatches, checkMutuals } from "./matches";
-import { getMyVouches, giveVouch, removeVouch, getVouchSummary } from "./vouches";
+import {
+  getMyVouches,
+  giveVouch,
+  removeVouch,
+  getVouchSummary,
+} from "./vouches";
 import { getMyCrushList, addCrush, removeCrush } from "./crush-list";
 import { getMyPoints, getPointsHistory } from "./points";
+import { generateMatchPlan, getMatchPlan } from "./generate-match-plan";
 
 export const socialRouter = createTRPCRouter({
   // Connections
@@ -31,4 +37,7 @@ export const socialRouter = createTRPCRouter({
   // Points
   getMyPoints,
   getPointsHistory,
+  // Match Plan
+  generateMatchPlan,
+  getMatchPlan,
 });
