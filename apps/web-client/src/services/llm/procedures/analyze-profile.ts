@@ -4,10 +4,8 @@
 
 import { authedProcedure } from "@/server/init";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { analyzerSessions } from "@/services/verification/schema";
-import { users } from "@/services/users/schema";
 import { analyzeProfile as callAnalyzeProfile } from "../client";
 import { fetchEnvironmentContext } from "@/services/environment";
 
@@ -37,29 +35,6 @@ export const analyzeProfile = authedProcedure
   .input(analyzeProfileInput)
   .mutation(async ({ ctx, input }) => {
     try {
-      // Ensure the user exists in the `users` table before inserting into
-      // `analyzer_sessions` (FK constraint). Uses the admin db to bypass RLS.
-      const [existing] = await ctx.db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.id, ctx.user.id))
-        .limit(1);
-
-      if (!existing) {
-        await ctx.db
-          .insert(users)
-          .values({
-            id: ctx.user.id,
-            email:
-              ctx.user.emailAddresses[0]?.emailAddress ??
-              `${ctx.user.id}@placeholder.local`,
-            firstName: ctx.user.firstName,
-            lastName: ctx.user.lastName,
-            imageUrl: ctx.user.imageUrl,
-          })
-          .onConflictDoNothing({ target: users.id });
-      }
-
       // Fetch environmental context if location is provided
       let environmentContext: Awaited<
         ReturnType<typeof fetchEnvironmentContext>
