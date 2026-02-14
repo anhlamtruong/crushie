@@ -84,7 +84,7 @@ export function StepProgress({
               )}
 
               {step < totalSteps - 1 && (
-                <div className="flex-1 min-w-[40px] h-[2px] mx-1">
+                <div className="flex-1 min-w-10 h-0.5 mx-1">
                   <div className="h-full bg-border rounded-full overflow-hidden">
                     <motion.div
                       className="h-full bg-primary rounded-full"
@@ -129,7 +129,7 @@ export function StepProgress({
                 disabled={step > currentStep}
                 className={cn(
                   "relative flex items-center justify-center transition-all duration-300",
-                  "min-w-[44px] min-h-[44px]", // 44px min touch target
+                  "min-w-11 min-h-11", // 44px min touch target
                   "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full",
                 )}
                 aria-label={labels?.[step] ?? `Step ${step + 1}`}
