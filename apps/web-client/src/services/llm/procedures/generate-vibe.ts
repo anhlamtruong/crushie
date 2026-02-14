@@ -4,8 +4,10 @@
 
 import { authedProcedure } from "@/server/init";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { vibeProfiles } from "@/services/vibe-profiles/schema";
+import { users } from "@/services/users/schema";
 import { generateVibeProfile } from "../client";
 
 // ── Input ───────────────────────────────────────────────────────────────
@@ -30,6 +32,27 @@ export const generateVibe = authedProcedure
   .input(generateVibeInput)
   .mutation(async ({ ctx, input }) => {
     try {
+      const [existing] = await ctx.db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, ctx.user.id))
+        .limit(1);
+
+      if (!existing) {
+        await ctx.db
+          .insert(users)
+          .values({
+            id: ctx.user.id,
+            email:
+              ctx.user.emailAddresses[0]?.emailAddress ??
+              `${ctx.user.id}@placeholder.local`,
+            firstName: ctx.user.firstName,
+            lastName: ctx.user.lastName,
+            imageUrl: ctx.user.imageUrl,
+          })
+          .onConflictDoNothing({ target: users.id });
+      }
+
       const { data, meta } = await generateVibeProfile({
         userId: ctx.user.id,
         imageUrls: input.imageUrls,
