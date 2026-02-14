@@ -41,6 +41,8 @@ app.use("/api/prompt", promptRouter);
 app.use("/api/vibe-profile", vibeProfileRouter);
 app.use("/api/analyzer", analyzerRouter);
 app.use("/api/evaluate-match", evaluateMatchRouter);
+app.use("/api/verify-identity", verifyIdentityRouter);
+app.use("/api/vibe-match", vibeMatchRouter);
 
 // Error handler
 app.use(
