@@ -5,18 +5,19 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json ./
+# Copy build context (works for both root-context and apps/llm-context builds)
+COPY . .
 
-# Install dependencies
-RUN npm install
-
-# Copy source
-COPY tsconfig.json ./
-COPY src/ ./src/
-
-# Build TypeScript
-RUN npm run build
+# Install dependencies and build from detected app directory
+RUN set -eux; \
+  APP_DIR="."; \
+  if [ -f apps/llm/package.json ]; then APP_DIR="apps/llm"; fi; \
+  cd "$APP_DIR"; \
+  npm install; \
+  npm run build; \
+  mkdir -p /opt/llm; \
+  cp package.json /opt/llm/package.json; \
+  cp -r dist /opt/llm/dist
 
 # ──────────────────────────────────────────────────────────────────────────
 # Stage 2: Production
@@ -29,11 +30,11 @@ WORKDIR /app
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # Copy package files and install production deps only
-COPY package.json ./
+COPY --from=builder /opt/llm/package.json ./
 RUN npm install --omit=dev && npm cache clean --force
 
 # Copy built output from builder
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /opt/llm/dist ./dist
 
 # Switch to non-root user
 USER appuser

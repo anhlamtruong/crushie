@@ -1,0 +1,28 @@
+# VCS
+.git
+.gitignore
+
+# Dependencies
+**/node_modules
+
+# Build outputs
+**/dist
+**/build
+**/.next
+**/.expo
+
+# Logs
+**/*.log
+
+# Environment files
+**/.env
+**/.env.*
+
+# OS / editor
+**/.DS_Store
+**/.vscode
+
+# Heavy mobile artifacts
+apps/mobile/ios/Pods
+apps/mobile/ios/build
+apps/mobile/android/.gradle
