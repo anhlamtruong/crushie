@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1770322447103,
+      "tag": "0000_organic_revanche",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770698995342,
+      "tag": "0001_gray_revanche",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770957888058,
+      "tag": "0002_amazing_lionheart",
+      "breakpoints": true
+    }
+  ]
+}
