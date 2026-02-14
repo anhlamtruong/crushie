@@ -205,3 +205,19 @@ export const VERIFICATION_FALLBACK: VerificationIdentityResult = {
   confidence: 0,
   reasoning: "Verification service temporarily unavailable.",
 };
+
+// ============================================================================
+// Pipeline 4: Identity Verification Fallback
+// ============================================================================
+
+export type VerificationIdentityResult = {
+  is_match: boolean;
+  confidence: number;
+  reasoning: string;
+};
+
+export const VERIFICATION_FALLBACK: VerificationIdentityResult = {
+  is_match: false,
+  confidence: 0,
+  reasoning: "Verification service temporarily unavailable.",
+};

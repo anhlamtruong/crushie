@@ -173,7 +173,7 @@ export default function AnalyzeProfilePage() {
             >
               <Sparkles className="w-7 h-7 text-primary" />
             </motion.div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold bg-linear-to-r from-primary via-chart-3 to-chart-2 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold bg-linear-to-r from-primary via-chart-3 to-chart-2 bg-clip-text text-transparent">
               Crush Analyzer
             </h1>
           </div>

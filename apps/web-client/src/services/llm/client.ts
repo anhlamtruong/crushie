@@ -160,6 +160,24 @@ export type LiveSuggestionData = {
   confidence: number;
 };
 
+// ── Identity verification types ───────────────────────────────────────────
+
+export type LLMImageInput = {
+  base64: string;
+  mimeType: string;
+};
+
+export type VerifyIdentityInput = {
+  profilePhoto: LLMImageInput;
+  freshSelfie: LLMImageInput;
+};
+
+export type VerifyIdentityResult = {
+  is_match: boolean;
+  confidence: number;
+  reasoning: string;
+};
+
 // ============================================================================
 // HTTP Client
 // ============================================================================
@@ -386,5 +404,33 @@ export async function getLiveSuggestion(input: {
     targetVibe: input.targetVibe,
     currentTopic: input.currentTopic ?? "",
     language: input.language ?? "Respond in English.",
+  });
+}
+
+// ============================================================================
+// Pipeline 4: Identity Verification
+// ============================================================================
+
+export async function verifyIdentity(
+  input: VerifyIdentityInput,
+): Promise<LLMResponse<VerifyIdentityResult>> {
+  return llmFetch<VerifyIdentityResult>("/api/verify-identity", input);
+}
+
+export async function vibeMatch(input: {
+  profile: ProfileSummary;
+  otherUsers: ProfileSummary[];
+  limit: number;
+  vectorSimilarity?: number;
+  useMock?: boolean;
+}): Promise<LLMResponse<LLMCompatibilityData>> {
+  const endpoint = input.useMock
+    ? "/api/evaluate-match/mock"
+    : `/api/vibe-match?limit=${input.limit}`;
+
+  return llmFetch<LLMCompatibilityData>(endpoint, {
+    profile: input.profile,
+    otherUsers: input.otherUsers,
+    vectorSimilarity: input.vectorSimilarity,
   });
 }

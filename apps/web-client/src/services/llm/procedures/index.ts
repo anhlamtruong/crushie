@@ -11,6 +11,7 @@ import { evaluateMatchProcedure } from "./evaluate-match";
 import { findAndEvaluateMatches } from "./find-and-evaluate-matches";
 import { getAnalyzerHistory } from "./get-analyzer-history";
 import { getAnalyzerSession } from "./get-analyzer-session";
+import { vibeMatchProcedure } from "./vibe-match";
 
 export const llmRouter = createTRPCRouter({
   generateVibe,
@@ -19,4 +20,5 @@ export const llmRouter = createTRPCRouter({
   findAndEvaluateMatches,
   getAnalyzerHistory,
   getAnalyzerSession,
+  vibeMatch: vibeMatchProcedure
 });
