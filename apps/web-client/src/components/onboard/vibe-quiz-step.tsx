@@ -102,7 +102,7 @@ export function VibeQuizStep({
                         "relative flex items-center gap-3 rounded-xl px-4 py-3.5 md:py-4 text-left transition-all duration-200",
                         "border will-change-transform",
                         "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        "min-h-[52px] md:min-h-[60px]",
+                        "min-h-13 md:min-h-15",
                         isSelected
                           ? "bg-primary/10 border-primary/40 ring-2 ring-primary/30 shadow-md"
                           : "bg-card/50 border-border/50 hover:bg-accent/30 hover:border-border",
