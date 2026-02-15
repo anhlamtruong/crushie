@@ -16,6 +16,7 @@ import {
   getAnalyzerImagesProcedure,
   deleteAnalyzerImagesProcedure,
 } from "./upload-analyzer-image";
+import { uploadProofImageProcedure } from "./upload-proof-image";
 
 export const uploadsRouter = createTRPCRouter({
   uploadOnboardImage: uploadOnboardImageProcedure,
@@ -24,4 +25,5 @@ export const uploadsRouter = createTRPCRouter({
   uploadAnalyzerImage: uploadAnalyzerImageProcedure,
   getAnalyzerImages: getAnalyzerImagesProcedure,
   deleteAnalyzerImages: deleteAnalyzerImagesProcedure,
+  uploadProofImage: uploadProofImageProcedure,
 });

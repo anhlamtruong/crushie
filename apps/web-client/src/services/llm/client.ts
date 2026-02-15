@@ -123,6 +123,7 @@ export type MatchPlanPlaceCandidate = {
   placeType: string;
   types: string[];
   isIndoor: boolean;
+  photoUrl?: string;
 };
 
 export type LLMMissionPlanData = LLMCompatibilityData;
@@ -402,14 +403,30 @@ export async function vibeMatch(input: {
   vectorSimilarity?: number;
   useMock?: boolean;
 }): Promise<LLMResponse<LLMVibeProfileData[]>> {
-  console.log("hihi")
-  const endpoint = input.useMock
-    ? "/api/vibe-match/mock"
-    : `/api/vibe-match`;
+  const endpoints = input.useMock
+    ? ["/api/vibe-match/mock", "/api/vibe-match", "/api/vibe-match/top"]
+    : ["/api/vibe-match", "/api/vibe-match/top"];
 
-  return llmFetch<LLMVibeProfileData[]>(endpoint, {
-    profile: input.profile,
-    otherUsers: input.otherUsers,
-    vectorSimilarity: input.vectorSimilarity,
-  });
+  let lastError: unknown;
+
+  for (const endpoint of endpoints) {
+    try {
+      return await llmFetch<LLMVibeProfileData[]>(endpoint, {
+        profile: input.profile,
+        otherUsers: input.otherUsers,
+        vectorSimilarity: input.vectorSimilarity,
+      });
+    } catch (error) {
+      if (error instanceof LLMServiceError && error.statusCode === 404) {
+        lastError = error;
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw (
+    lastError ??
+    new Error("No compatible vibe-match endpoint found on LLM service")
+  );
 }

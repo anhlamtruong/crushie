@@ -11,6 +11,7 @@ import { supabaseAdmin, USER_UPLOADS_BUCKET } from "@/lib/supabase";
 
 const ONBOARD_PREFIX = "on-board";
 const ANALYZER_PREFIX = "analyzer";
+const PROOF_PREFIX = "proof";
 const ALLOWED_MIME_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -264,4 +265,43 @@ export async function deleteAnalyzerImages(userId: string): Promise<void> {
       `Failed to delete analyzer images: ${deleteError.message}`,
     );
   }
+}
+
+// ── Proof Upload ────────────────────────────────────────────────────────
+
+/**
+ * Upload a mission proof image for a user.
+ *
+ * Storage path: `{userId}/proof/{timestamp}-{fileName}`
+ */
+export async function uploadProofImage(
+  userId: string,
+  file: Buffer | Uint8Array,
+  fileName: string,
+  mimeType: string,
+): Promise<UploadResult> {
+  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const timestamp = Date.now();
+  const storagePath = `${userId}/${PROOF_PREFIX}/${timestamp}-${safeName}`;
+
+  const { data, error } = await supabaseAdmin.storage
+    .from(USER_UPLOADS_BUCKET)
+    .upload(storagePath, file, {
+      contentType: mimeType,
+      upsert: false,
+    });
+
+  if (error) {
+    console.error("[upload] Supabase storage error (proof):", error);
+    throw new UploadError(500, `Upload failed: ${error.message}`);
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabaseAdmin.storage.from(USER_UPLOADS_BUCKET).getPublicUrl(data.path);
+
+  return {
+    url: publicUrl,
+    path: data.path,
+  };
 }

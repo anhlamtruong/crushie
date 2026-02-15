@@ -11,6 +11,8 @@ import { llmRouter } from "@/services/llm/procedures";
 import { uploadsRouter } from "@/services/uploads/procedures";
 import { environmentRouter } from "@/services/environment/procedures";
 import { realtimeRouter } from "@/services/realtime/procedures";
+import { chatRouter } from "@/services/chat/procedures";
+import { academyRouter } from "@/services/academy/procedures";
 
 export const appRouter = createTRPCRouter({
   hello: publicProcedure
@@ -56,6 +58,8 @@ export const appRouter = createTRPCRouter({
   realtime: realtimeRouter,
   uploads: uploadsRouter,
   environment: environmentRouter,
+  chat: chatRouter,
+  academy: academyRouter,
 });
 
 export type AppRouter = typeof appRouter;

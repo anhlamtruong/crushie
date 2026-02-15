@@ -411,10 +411,10 @@ export const compatibilityPrompt = createPromptTemplate({
   rules: [
     "Return ONLY valid JSON — no markdown, no explanation, no preamble",
     "Output object must contain exactly 4 top-level keys: mission, similarityScore, successProbability, narrative",
-    "mission must contain exactly: title, task, locationId",
+    "mission must contain exactly: title, task, location_id",
     "title should be Valentine-themed and concise",
     "task must be gamified, specific, and actionable in one meetup",
-    "locationId must be one of the provided placeCandidates.placeId values",
+    "location_id must be one of the provided placeCandidates.placeId values",
     "similarityScore must be a float from 0.0 to 1.0",
     "successProbability must be an integer percentage from 0 to 100",
     "narrative should be 2-3 sentences and feel pair-specific",
@@ -427,7 +427,7 @@ export const compatibilityPrompt = createPromptTemplate({
     mission: {
       title: "string — Valentine-themed mission title",
       task: "string — gamified objective",
-      locationId: "string — selected placeId from placeCandidates",
+      location_id: "string — selected placeId from placeCandidates",
     },
     similarityScore: "number 0.0-1.0",
     successProbability: "number 0-100",
@@ -487,7 +487,7 @@ export const compatibilityPrompt = createPromptTemplate({
         mission: {
           title: "Rose Latte Signal",
           task: "At Brave Roasters, each person picks one drink for the other and explains the choice in one sentence.",
-          locationId: "place_1",
+          location_id: "place_1",
         },
         similarityScore: 0.84,
         successProbability: 82,

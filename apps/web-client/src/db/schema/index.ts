@@ -5,3 +5,5 @@ export * from "@/services/vibe-profiles/schema";
 export * from "@/services/social/schema";
 export * from "@/services/missions/schema";
 export * from "@/services/verification/schema";
+export * from "@/services/academy/schema";
+export * from "@/services/chat/schema";

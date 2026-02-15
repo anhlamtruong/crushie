@@ -78,7 +78,7 @@ const missionPlanSchema = z
       .object({
         title: z.string().min(1),
         task: z.string().min(1),
-        locationId: z.string().min(1),
+        location_id: z.string().min(1),
       })
       .strict(),
     similarityScore: z.number().min(0).max(1),
@@ -164,14 +164,22 @@ router.post("/", requireServiceToken(), async (req, res) => {
         2,
       );
       const parsed = missionPlanSchema.parse(generated);
+      const selectedLocationId = parsed.mission.location_id;
       result = {
-        ...parsed,
+        similarityScore: parsed.similarityScore,
+        successProbability: parsed.successProbability,
+        narrative: parsed.narrative,
+        mission: {
+          title: parsed.mission.title,
+          task: parsed.mission.task,
+          locationId: selectedLocationId,
+        },
         score: parsed.similarityScore,
       };
 
       if (placeCandidates?.length) {
         const validPlace = placeCandidates.some(
-          (item) => item.placeId === result.mission.locationId,
+          (item) => item.placeId === selectedLocationId,
         );
         if (!validPlace) {
           throw new Error(
@@ -185,7 +193,7 @@ router.post("/", requireServiceToken(), async (req, res) => {
         placeCandidates?.length
       ) {
         const selected = placeCandidates.find(
-          (item) => item.placeId === result.mission.locationId,
+          (item) => item.placeId === selectedLocationId,
         );
         if (selected && !selected.isIndoor) {
           throw new Error("Rain condition requires indoor location");

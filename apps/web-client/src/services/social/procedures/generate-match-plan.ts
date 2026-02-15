@@ -37,10 +37,13 @@ const indoorPlaceTypes = new Set([
 ]);
 
 const cacheTtlMs = 1000 * 60 * 60 * 12;
+const reusableMissionStatuses = new Set(["proposed", "accepted", "active"]);
+const defaultMatchCity = "Ho Chi Minh City";
 
 const generateMatchPlanInput = z.object({
   matchId: z.uuid(),
   useMock: z.boolean().optional().default(false),
+  forceRegenerate: z.boolean().optional().default(false),
 });
 
 const getMatchPlanInput = z.object({
@@ -101,6 +104,41 @@ function toPlaceCandidates(places: PlaceResult[]): MatchPlanPlaceCandidate[] {
     types: place.types,
     isIndoor: isIndoorPlace(place),
   }));
+}
+
+function buildFallbackPlaces(city: string): PlaceResult[] {
+  return [
+    {
+      name: `${city} Cozy Cafe`,
+      placeId: `fallback_${city.replace(/\s+/g, "_").toLowerCase()}_cafe`,
+      vicinity: `${city}, Central District`,
+      types: ["cafe", "food", "point_of_interest"],
+    },
+    {
+      name: `${city} Art Spot`,
+      placeId: `fallback_${city.replace(/\s+/g, "_").toLowerCase()}_gallery`,
+      vicinity: `${city}, Arts District`,
+      types: ["art_gallery", "museum", "point_of_interest"],
+    },
+    {
+      name: `${city} Rooftop Lounge`,
+      placeId: `fallback_${city.replace(/\s+/g, "_").toLowerCase()}_bar`,
+      vicinity: `${city}, Riverside District`,
+      types: ["bar", "restaurant", "point_of_interest"],
+    },
+    {
+      name: `${city} Night Market Corner`,
+      placeId: `fallback_${city.replace(/\s+/g, "_").toLowerCase()}_market`,
+      vicinity: `${city}, Old Quarter`,
+      types: ["restaurant", "shopping_mall", "point_of_interest"],
+    },
+    {
+      name: `${city} Indie Cinema`,
+      placeId: `fallback_${city.replace(/\s+/g, "_").toLowerCase()}_cinema`,
+      vicinity: `${city}, West District`,
+      types: ["movie_theater", "point_of_interest"],
+    },
+  ];
 }
 
 async function resolveLocationFromAnalyzerCity(city: string) {
@@ -195,10 +233,44 @@ export const generateMatchPlan = authedProcedure
         .limit(1);
     });
 
-    if (
-      cachedRow?.plan &&
-      (!cachedRow.expiresAt || cachedRow.expiresAt > new Date())
-    ) {
+    const [cachedMissionInstance] = await ctx.secureDb!.rls(async (tx) => {
+      if (!cachedRow?.missionInstanceId) return [];
+
+      return tx
+        .select({
+          id: missionInstances.id,
+          status: missionInstances.status,
+        })
+        .from(missionInstances)
+        .where(eq(missionInstances.id, cachedRow.missionInstanceId))
+        .limit(1);
+    });
+
+    const canReuseCachedPlan =
+      !input.forceRegenerate &&
+      Boolean(cachedRow?.plan) &&
+      (!cachedRow?.missionInstanceId ||
+        (cachedMissionInstance
+          ? reusableMissionStatuses.has(cachedMissionInstance.status)
+          : false));
+
+    if (canReuseCachedPlan) {
+      let resolvedExpiresAt = cachedRow?.expiresAt ?? null;
+
+      if (cachedRow?.expiresAt && cachedRow.expiresAt <= new Date()) {
+        resolvedExpiresAt = new Date(Date.now() + cacheTtlMs);
+
+        await ctx.secureDb!.rls(async (tx) => {
+          await tx
+            .update(matchPlanCache)
+            .set({
+              updatedAt: new Date(),
+              expiresAt: resolvedExpiresAt,
+            })
+            .where(eq(matchPlanCache.matchId, input.matchId));
+        });
+      }
+
       const [progressRows, myProgress] = await ctx.secureDb!.rls(async (tx) => {
         const allProgress = cachedRow.missionInstanceId
           ? await tx
@@ -239,7 +311,7 @@ export const generateMatchPlan = authedProcedure
         cache: {
           hit: true,
           generatedAt: cachedRow.generatedAt,
-          expiresAt: cachedRow.expiresAt,
+          expiresAt: resolvedExpiresAt,
         },
         acceptance: {
           acceptedCount,
@@ -299,37 +371,58 @@ export const generateMatchPlan = authedProcedure
         .limit(1);
     });
 
-    if (!myLatestAnalyzerSession?.city) {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message:
-          "Location context is missing. Analyze a profile with city/location first, then generate a mission plan.",
-      });
-    }
+    const counterpartUserId =
+      match.userAId === ctx.user.id ? match.userBId : match.userAId;
 
-    const geocoded = await resolveLocationFromAnalyzerCity(
-      myLatestAnalyzerSession.city,
-    );
+    const [partnerLatestAnalyzerSession] = await ctx.secureDb!.rls(async (tx) => {
+      return tx
+        .select({ city: analyzerSessions.city })
+        .from(analyzerSessions)
+        .where(
+          and(
+            eq(analyzerSessions.userId, counterpartUserId),
+            sql`${analyzerSessions.city} IS NOT NULL`,
+          ),
+        )
+        .orderBy(desc(analyzerSessions.createdAt))
+        .limit(1);
+    });
 
-    if (!geocoded) {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message:
-          "Could not resolve your latest city to coordinates for weather/place context. Please retry profile analysis with location enabled.",
-      });
-    }
+    const locationCity =
+      myLatestAnalyzerSession?.city ??
+      partnerLatestAnalyzerSession?.city ??
+      defaultMatchCity;
 
-    const environmentContext = await fetchEnvironmentContext(
-      geocoded.lat,
-      geocoded.lng,
-    );
+    let environmentContext: {
+      city: string;
+      weather?: {
+        temp: number;
+        feelsLike: number;
+        description: string;
+        icon: string;
+        humidity: number;
+        windSpeed: number;
+      };
+      nearbyPlaces: PlaceResult[];
+    } = {
+      city: locationCity,
+      nearbyPlaces: buildFallbackPlaces(locationCity),
+    };
 
-    if (!environmentContext || !environmentContext.nearbyPlaces.length) {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message:
-          "Could not fetch nearby places from environment services. Please retry when location APIs are available.",
-      });
+    try {
+      const geocoded = await resolveLocationFromAnalyzerCity(locationCity);
+      if (geocoded) {
+        const fetched = await fetchEnvironmentContext(geocoded.lat, geocoded.lng);
+        if (fetched?.nearbyPlaces?.length) {
+          environmentContext = {
+            city: fetched.city || locationCity,
+            weather: fetched.weather,
+            nearbyPlaces: fetched.nearbyPlaces,
+          };
+        }
+      }
+    } catch {
+      // Keep fallback city + places to avoid blocking mission generation.
     }
 
     const rainy = isRain(environmentContext.weather?.description);
@@ -355,11 +448,12 @@ export const generateMatchPlan = authedProcedure
       });
     }
 
+    let rawVectorDistance: number | undefined;
     let vectorSimilarity: number | undefined;
     try {
       const simResult = await ctx.secureDb!.rls(async (tx) => {
         return tx.execute(sql`
-          SELECT 1 - (a.embedding <=> b.embedding) AS similarity
+          SELECT (a.embedding <=> b.embedding) AS distance
           FROM vibe_profiles a, vibe_profiles b
           WHERE a.user_id = ${match.userAId}
             AND b.user_id = ${match.userBId}
@@ -372,12 +466,17 @@ export const generateMatchPlan = authedProcedure
         Array.isArray(simResult) &&
         simResult.length > 0 &&
         simResult[0] != null &&
-        typeof (simResult[0] as Record<string, unknown>).similarity === "number"
+        Number.isFinite(
+          Number((simResult[0] as Record<string, unknown>).distance),
+        )
       ) {
-        vectorSimilarity = (simResult[0] as Record<string, unknown>)
-          .similarity as number;
+        rawVectorDistance = Number(
+          (simResult[0] as Record<string, unknown>).distance,
+        );
+        vectorSimilarity = Math.max(0, Math.min(1, 1 - rawVectorDistance));
       }
     } catch {
+      rawVectorDistance = undefined;
       vectorSimilarity = undefined;
     }
 
@@ -385,6 +484,16 @@ export const generateMatchPlan = authedProcedure
     const profileSummaryB = toProfileSummary(profileB);
 
     const placeCandidates = toPlaceCandidates(selectedPlaces);
+    const placeCandidatesWithPhotos = placeCandidates.map((candidate) => {
+      const source = selectedPlaces.find(
+        (place) => place.placeId === candidate.placeId,
+      );
+
+      return {
+        ...candidate,
+        photoUrl: source?.staticMapUrl,
+      };
+    });
 
     const llmResult = await evaluateMatch({
       profileA: profileSummaryA,
@@ -460,6 +569,11 @@ export const generateMatchPlan = authedProcedure
       return createdInstance;
     });
 
+    const resolvedSimilarityScore =
+      typeof data.similarityScore === "number"
+        ? data.similarityScore
+        : (vectorSimilarity ?? match.similarity);
+
     const responsePlan = {
       matchId: match.id,
       userA: {
@@ -486,10 +600,8 @@ export const generateMatchPlan = authedProcedure
           : null,
         photoUrl: selectedPlace?.staticMapUrl ?? null,
       },
-      similarityScore:
-        typeof data.similarityScore === "number"
-          ? data.similarityScore
-          : (vectorSimilarity ?? match.similarity),
+      similarityScore: resolvedSimilarityScore,
+      rawVectorDistance,
       successProbability: data.successProbability,
       narrative: data.narrative,
       weatherContext: environmentContext.weather
@@ -503,15 +615,18 @@ export const generateMatchPlan = authedProcedure
       llmMeta: llmResult.meta,
     };
 
+    responsePlan.placeCandidates = placeCandidatesWithPhotos;
+
     await ctx.secureDb!.rls(async (tx) => {
       await tx
         .update(vibeMatches)
         .set({
-          similarity: responsePlan.similarityScore,
+          similarity: resolvedSimilarityScore,
           compatibility: {
             ...((match.compatibility as Record<string, unknown>) ?? {}),
             narrative: responsePlan.narrative,
             successProbability: responsePlan.successProbability,
+            rawVectorDistance,
             mission: responsePlan.mission,
             environment: {
               city: environmentContext.city,

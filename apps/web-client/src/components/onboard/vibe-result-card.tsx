@@ -164,7 +164,7 @@ export function VibeResultCard({
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.7, type: "spring", stiffness: 150 }}
-          className="text-4xl md:text-5xl font-bold bg-linear-to-r from-primary via-chart-3 to-gold bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(230,57,114,0.15)] animate-shimmer bg-[length:200%_auto]"
+          className="text-4xl md:text-5xl font-bold bg-linear-to-r from-primary via-chart-3 to-gold bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(230,57,114,0.15)] animate-shimmer bg-size-[200%_auto]"
         >
           {profile.vibeName}
         </motion.h2>

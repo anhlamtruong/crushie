@@ -1,10 +1,12 @@
 import { authedProcedure } from "@/server/init";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
   missionTemplates,
   missionInstances,
   userMissionProgress,
 } from "../schema";
+import { vibePointsLedger } from "@/services/social/schema";
 import { eq, and, sql } from "drizzle-orm";
 
 export const completeObjective = authedProcedure
@@ -41,6 +43,24 @@ export const checkin = authedProcedure
   )
   .mutation(async ({ ctx, input }) => {
     return ctx.secureDb!.rls(async (tx) => {
+      const [myProgress] = await tx
+        .select()
+        .from(userMissionProgress)
+        .where(
+          and(
+            eq(userMissionProgress.instanceId, input.instanceId),
+            eq(userMissionProgress.userId, ctx.user.id),
+          ),
+        )
+        .limit(1);
+
+      if (!myProgress) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Mission progress not found for current user.",
+        });
+      }
+
       await tx
         .update(userMissionProgress)
         .set({ checkedIn: true, updatedAt: new Date() })
@@ -56,6 +76,13 @@ export const checkin = authedProcedure
         .from(userMissionProgress)
         .where(eq(userMissionProgress.instanceId, input.instanceId));
 
+      if (!progress.length) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Mission progress records are missing.",
+        });
+      }
+
       const allCheckedIn = progress.every((p) => p.checkedIn);
 
       if (allCheckedIn) {
@@ -64,6 +91,13 @@ export const checkin = authedProcedure
           .from(missionInstances)
           .where(eq(missionInstances.id, input.instanceId))
           .limit(1);
+
+        if (!instance) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Mission instance not found.",
+          });
+        }
 
         const [template] = await tx
           .select()
@@ -85,25 +119,50 @@ export const checkin = authedProcedure
 
         for (const p of progress) {
           await tx
-            .insert(userMissionProgress)
-            .values({
-              instanceId: input.instanceId,
+            .update(userMissionProgress)
+            .set({ pointsEarned: points, updatedAt: new Date() })
+            .where(
+              and(
+                eq(userMissionProgress.instanceId, input.instanceId),
+                eq(userMissionProgress.userId, p.userId),
+              ),
+            );
+
+          const [existingLedger] = await tx
+            .select({ id: vibePointsLedger.id })
+            .from(vibePointsLedger)
+            .where(
+              and(
+                eq(vibePointsLedger.userId, p.userId),
+                eq(vibePointsLedger.referenceId, input.instanceId),
+                eq(vibePointsLedger.reason, "mission-completed"),
+              ),
+            )
+            .limit(1);
+
+          if (!existingLedger) {
+            await tx.insert(vibePointsLedger).values({
               userId: p.userId,
-              pointsEarned: points,
-            })
-            .onConflictDoUpdate({
-              target: [
-                userMissionProgress.instanceId,
-                userMissionProgress.userId,
-              ],
-              set: { pointsEarned: points, updatedAt: new Date() },
+              delta: points,
+              reason: "mission-completed",
+              referenceId: input.instanceId,
             });
+          }
         }
 
-        return { completed: true, pointsAwarded: points };
+        return {
+          completed: true,
+          pointsAwarded: points,
+          instanceId: input.instanceId,
+          matchId: instance.matchId,
+        };
       }
 
-      return { completed: false, waitingForPartner: true };
+      return {
+        completed: false,
+        waitingForPartner: true,
+        instanceId: input.instanceId,
+      };
     });
   });
 

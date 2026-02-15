@@ -1,7 +1,51 @@
 import { authedProcedure } from "@/server/init";
 import { z } from "zod";
 import { vibeMatches } from "../schema";
-import { eq, or, desc, sql } from "drizzle-orm";
+import { eq, or, desc, sql, inArray } from "drizzle-orm";
+import { users } from "@/services/users/schema";
+import { vibeProfiles } from "@/services/vibe-profiles/schema";
+
+type MatchUserProfile = {
+  id: string;
+  displayName: string;
+  firstName: string | null;
+  lastName: string | null;
+  gender: string | null;
+  imageUrl: string | null;
+  vibeName: string | null;
+  vibeSummary: string | null;
+  bio: string | null;
+  energy: string | null;
+  photoUrls: string[];
+  interestTags: string[];
+  interestedIn: string | null;
+  isVerified: boolean;
+};
+
+function buildProfile(
+  userId: string,
+  userRow: any | undefined,
+  vibeRow: any | undefined,
+): MatchUserProfile {
+  return {
+    id: userId,
+    displayName:
+      [userRow?.firstName, userRow?.lastName].filter(Boolean).join(" ") ||
+      "Anonymous",
+    firstName: userRow?.firstName ?? null,
+    lastName: userRow?.lastName ?? null,
+    gender: vibeRow?.gender ?? userRow?.gender ?? null,
+    imageUrl: userRow?.imageUrl ?? null,
+    vibeName: vibeRow?.vibeName ?? null,
+    vibeSummary: vibeRow?.vibeSummary ?? null,
+    bio: vibeRow?.bio ?? null,
+    energy: vibeRow?.energy ?? null,
+    photoUrls: vibeRow?.photoUrls ?? [],
+    interestTags: vibeRow?.interestTags ?? [],
+    interestedIn: vibeRow?.interestedIn ?? null,
+    isVerified: userRow?.isVerified ?? false,
+  };
+}
 
 export const listMatches = authedProcedure
   .input(
@@ -12,7 +56,7 @@ export const listMatches = authedProcedure
       .default({ limit: 20 }),
   )
   .query(async ({ ctx, input }) => {
-    return ctx.secureDb!.rls(async (tx) => {
+    const rawMatches = (await ctx.secureDb!.rls(async (tx) => {
       return tx
         .select()
         .from(vibeMatches)
@@ -24,7 +68,39 @@ export const listMatches = authedProcedure
         )
         .orderBy(desc(vibeMatches.matchedAt))
         .limit(input.limit);
-    });
+    })) as Array<typeof vibeMatches.$inferSelect>;
+
+    if (!rawMatches.length) return [];
+
+    // Collect all unique user IDs from matches
+    const userIds = [
+      ...new Set(rawMatches.flatMap((m) => [m.userAId, m.userBId])),
+    ];
+
+    // Fetch user records
+    const userRows = (await ctx.secureDb!.rls(async (tx) => {
+      return tx
+        .select()
+        .from(users)
+        .where(inArray(users.id, userIds));
+    })) as Array<typeof users.$inferSelect>;
+
+    // Fetch vibe profiles
+    const vibeRows = (await ctx.secureDb!.rls(async (tx) => {
+      return tx
+        .select()
+        .from(vibeProfiles)
+        .where(inArray(vibeProfiles.userId, userIds));
+    })) as Array<typeof vibeProfiles.$inferSelect>;
+
+    const userMap = new Map(userRows.map((u) => [u.id, u]));
+    const vibeMap = new Map(vibeRows.map((v) => [v.userId, v]));
+
+    return rawMatches.map((match) => ({
+      ...match,
+      userA: buildProfile(match.userAId, userMap.get(match.userAId), vibeMap.get(match.userAId)),
+      userB: buildProfile(match.userBId, userMap.get(match.userBId), vibeMap.get(match.userBId)),
+    }));
   });
 
 export const checkMutuals = authedProcedure

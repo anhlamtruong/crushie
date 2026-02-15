@@ -50,6 +50,22 @@ export const authedProcedure = t.procedure.use(async (opts) => {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
 
+  let secureDb = opts.ctx.secureDb;
+  if (!secureDb) {
+    try {
+      secureDb = await getSecureDb();
+    } catch (error) {
+      console.error(
+        "Failed to initialize secure DB in authedProcedure:",
+        error,
+      );
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Unable to establish authenticated database session",
+      });
+    }
+  }
+
   try {
     const email =
       opts.ctx.user.emailAddresses[0]?.emailAddress ??
@@ -85,6 +101,6 @@ export const authedProcedure = t.procedure.use(async (opts) => {
   }
 
   return opts.next({
-    ctx: { ...opts.ctx, user: opts.ctx.user },
+    ctx: { ...opts.ctx, user: opts.ctx.user, secureDb },
   });
 });

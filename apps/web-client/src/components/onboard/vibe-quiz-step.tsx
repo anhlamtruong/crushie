@@ -120,7 +120,7 @@ export function VibeQuizStep({
                           opacity: isSelected ? 1 : 0.3,
                         }}
                         className={cn(
-                          "flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                          "shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center",
                           isSelected
                             ? "bg-primary border-primary"
                             : "border-border bg-transparent",

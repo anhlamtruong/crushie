@@ -35,7 +35,7 @@ const navItems = [
     icon: HeartHandshake,
   },
   {
-    label: "Discover",
+    label: "Match Center",
     href: "/discover",
     icon: Compass,
   },
@@ -45,14 +45,14 @@ const navItems = [
     icon: Rocket,
   },
   {
-    label: "Theme Editor",
-    href: "/theme-editor",
-    icon: Palette,
-  },
-  {
     label: "Vibe Profiles",
     href: "/profile",
     icon: UserRoundCog,
+  },
+  {
+    label: "Theme Editor",
+    href: "/theme-editor",
+    icon: Palette,
   },
 ];
 

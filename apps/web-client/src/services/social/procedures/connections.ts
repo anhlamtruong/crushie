@@ -47,16 +47,86 @@ export const listConnections = authedProcedure
 export const sendRequest = authedProcedure
   .input(z.object({ userId: z.string().min(1) }))
   .mutation(async ({ ctx, input }) => {
-    const [created] = await ctx.secureDb!.rls(async (tx) => {
-      return tx
+    if (input.userId === ctx.user.id) {
+      throw new Error("Cannot send connection request to yourself");
+    }
+
+    return ctx.secureDb!.rls(async (tx) => {
+      const [existingOutgoing] = await tx
+        .select()
+        .from(connections)
+        .where(
+          and(
+            eq(connections.requesterId, ctx.user.id),
+            eq(connections.addresseeId, input.userId),
+          ),
+        )
+        .limit(1);
+
+      if (existingOutgoing) {
+        return {
+          ...existingOutgoing,
+          mutual: existingOutgoing.status === "accepted",
+          targetUserId: input.userId,
+        };
+      }
+
+      const [incomingPending] = await tx
+        .select()
+        .from(connections)
+        .where(
+          and(
+            eq(connections.requesterId, input.userId),
+            eq(connections.addresseeId, ctx.user.id),
+            eq(connections.status, "pending"),
+          ),
+        )
+        .orderBy(desc(connections.createdAt))
+        .limit(1);
+
+      if (incomingPending) {
+        const now = new Date();
+
+        const [acceptedIncoming] = await tx
+          .update(connections)
+          .set({
+            status: "accepted",
+            updatedAt: now,
+          })
+          .where(eq(connections.id, incomingPending.id))
+          .returning();
+
+        const [createdAccepted] = await tx
+          .insert(connections)
+          .values({
+            requesterId: ctx.user.id,
+            addresseeId: input.userId,
+            status: "accepted",
+            updatedAt: now,
+          })
+          .returning();
+
+        return {
+          ...(createdAccepted ?? acceptedIncoming),
+          mutual: true,
+          targetUserId: input.userId,
+        };
+      }
+
+      const [created] = await tx
         .insert(connections)
         .values({
           requesterId: ctx.user.id,
           addresseeId: input.userId,
         })
         .returning();
+
+      return {
+        ...created,
+        mutual: false,
+        targetUserId: input.userId,
+      };
     });
-    return created;
   });
 
 export const updateConnection = authedProcedure
