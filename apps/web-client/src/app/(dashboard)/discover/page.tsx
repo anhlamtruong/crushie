@@ -31,12 +31,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
 // ── Types ───────────────────────────────────────────────────────────────
@@ -81,7 +76,11 @@ type EnrichedMatch = {
 
 function toCandidate(item: any): Candidate | null {
   const userId =
-    item?.userId ?? item?.profile?.userId ?? item?.id ?? item?.profile?.id ?? null;
+    item?.userId ??
+    item?.profile?.userId ??
+    item?.id ??
+    item?.profile?.id ??
+    null;
   if (!userId) return null;
   const profile = item?.profile ?? item;
   return {
@@ -89,7 +88,9 @@ function toCandidate(item: any): Candidate | null {
     vibeName: profile?.vibeName,
     vibeSummary: profile?.vibeSummary,
     energy: profile?.energy,
-    interestTags: Array.isArray(profile?.interestTags) ? profile.interestTags : [],
+    interestTags: Array.isArray(profile?.interestTags)
+      ? profile.interestTags
+      : [],
     styleTags: Array.isArray(profile?.styleTags) ? profile.styleTags : [],
     moodTags: Array.isArray(profile?.moodTags) ? profile.moodTags : [],
   };
@@ -147,7 +148,10 @@ function AvatarImg({
   );
 }
 
-function getOtherUser(match: EnrichedMatch, myMatches: EnrichedMatch[]): MatchUserProfile {
+function getOtherUser(
+  match: EnrichedMatch,
+  myMatches: EnrichedMatch[],
+): MatchUserProfile {
   // Determine which side is "me" by finding the ID that appears in every match
   if (myMatches.length >= 2) {
     const ids = myMatches.map((m) => [m.userAId, m.userBId]).flat();
@@ -286,11 +290,15 @@ export default function DiscoverPage() {
   const checkinMutation = useMutation(
     trpc.missions.checkin.mutationOptions({
       onSuccess: async (result) => {
-        await queryClient.invalidateQueries(trpc.social.getMyPoints.queryFilter());
+        await queryClient.invalidateQueries(
+          trpc.social.getMyPoints.queryFilter(),
+        );
         await queryClient.invalidateQueries(
           trpc.social.getPointsHistory.queryFilter({ limit: 10 }),
         );
-        await queryClient.invalidateQueries(trpc.academy.getMyLevel.queryFilter());
+        await queryClient.invalidateQueries(
+          trpc.academy.getMyLevel.queryFilter(),
+        );
         const matchId = (result as any)?.matchId ?? selectedMatchId;
         if (matchId) {
           await queryClient.invalidateQueries(
@@ -333,10 +341,18 @@ export default function DiscoverPage() {
   const redeemRewardMutation = useMutation(
     trpc.academy.redeemReward.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries(trpc.academy.getMyLevel.queryFilter());
-        await queryClient.invalidateQueries(trpc.social.getMyPoints.queryFilter());
-        await queryClient.invalidateQueries(trpc.academy.getMyRewards.queryFilter());
-        await queryClient.invalidateQueries(trpc.academy.listRewards.queryFilter());
+        await queryClient.invalidateQueries(
+          trpc.academy.getMyLevel.queryFilter(),
+        );
+        await queryClient.invalidateQueries(
+          trpc.social.getMyPoints.queryFilter(),
+        );
+        await queryClient.invalidateQueries(
+          trpc.academy.getMyRewards.queryFilter(),
+        );
+        await queryClient.invalidateQueries(
+          trpc.academy.listRewards.queryFilter(),
+        );
       },
     }),
   );
@@ -487,7 +503,11 @@ export default function DiscoverPage() {
       const uploadResult = await uploadProofMutation.mutateAsync({
         base64,
         fileName: proofFile.name,
-        mimeType: proofFile.type as "image/jpeg" | "image/png" | "image/webp" | "image/heic",
+        mimeType: proofFile.type as
+          | "image/jpeg"
+          | "image/png"
+          | "image/webp"
+          | "image/heic",
       });
       selfieUrl = uploadResult.url;
       setUploadedProofUrl(uploadResult.url);
@@ -619,11 +639,17 @@ export default function DiscoverPage() {
                           )}
                         </div>
                         <div className="mt-3 flex flex-wrap gap-1">
-                          {(candidate.interestTags ?? []).slice(0, 4).map((tag) => (
-                            <Badge key={tag} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
+                          {(candidate.interestTags ?? [])
+                            .slice(0, 4)
+                            .map((tag) => (
+                              <Badge
+                                key={tag}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
                           {(candidate.interestTags?.length ?? 0) > 4 && (
                             <Badge variant="outline" className="text-xs">
                               +{(candidate.interestTags?.length ?? 0) - 4}
@@ -768,14 +794,16 @@ export default function DiscoverPage() {
                           <div className="flex flex-col gap-4 p-4 sm:flex-row">
                             <div className="flex gap-2 overflow-x-auto">
                               {other.photoUrls.length > 0 ? (
-                                other.photoUrls.slice(0, 3).map((url, i) => (
-                                  <img
-                                    key={i}
-                                    src={url}
-                                    alt={`${other.displayName} photo ${i + 1}`}
-                                    className="h-28 w-28 shrink-0 rounded-lg object-cover ring-1 ring-border"
-                                  />
-                                ))
+                                other.photoUrls
+                                  .slice(0, 3)
+                                  .map((url, i) => (
+                                    <img
+                                      key={i}
+                                      src={url}
+                                      alt={`${other.displayName} photo ${i + 1}`}
+                                      className="h-28 w-28 shrink-0 rounded-lg object-cover ring-1 ring-border"
+                                    />
+                                  ))
                               ) : other.imageUrl ? (
                                 <img
                                   src={other.imageUrl}
@@ -889,10 +917,12 @@ export default function DiscoverPage() {
                                   >
                                     <p>{msg.content}</p>
                                     <p className="mt-0.5 text-[10px] opacity-60">
-                                      {new Date(msg.createdAt).toLocaleTimeString(
-                                        [],
-                                        { hour: "2-digit", minute: "2-digit" },
-                                      )}
+                                      {new Date(
+                                        msg.createdAt,
+                                      ).toLocaleTimeString([], {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
                                     </p>
                                   </div>
                                 </div>

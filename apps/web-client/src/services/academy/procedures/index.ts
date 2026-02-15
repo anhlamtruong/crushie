@@ -33,12 +33,14 @@ const getMyLevel = authedProcedure.query(async ({ ctx }) => {
 
   // Find current level (highest min_points <= totalPoints)
   const currentLevel =
-    levels.find((lvl) => lvl.minPoints <= totalPoints) ?? levels[levels.length - 1];
+    levels.find((lvl) => lvl.minPoints <= totalPoints) ??
+    levels[levels.length - 1];
 
   // Find next level
   const sortedAsc = [...levels].reverse();
   const currentIdx = sortedAsc.findIndex((lvl) => lvl.id === currentLevel?.id);
-  const nextLevel = currentIdx < sortedAsc.length - 1 ? sortedAsc[currentIdx + 1] : null;
+  const nextLevel =
+    currentIdx < sortedAsc.length - 1 ? sortedAsc[currentIdx + 1] : null;
 
   const pointsToNext = nextLevel ? nextLevel.minPoints - totalPoints : 0;
   const progressPercent = nextLevel
@@ -209,7 +211,8 @@ const getLeaderboard = authedProcedure
       rank: index + 1,
       userId: row.id,
       displayName:
-        [row.first_name, row.last_name].filter(Boolean).join(" ") || "Anonymous",
+        [row.first_name, row.last_name].filter(Boolean).join(" ") ||
+        "Anonymous",
       imageUrl: row.image_url,
       totalPoints: row.total_points,
     }));

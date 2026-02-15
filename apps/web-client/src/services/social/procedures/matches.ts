@@ -79,10 +79,7 @@ export const listMatches = authedProcedure
 
     // Fetch user records
     const userRows = (await ctx.secureDb!.rls(async (tx) => {
-      return tx
-        .select()
-        .from(users)
-        .where(inArray(users.id, userIds));
+      return tx.select().from(users).where(inArray(users.id, userIds));
     })) as Array<typeof users.$inferSelect>;
 
     // Fetch vibe profiles
@@ -98,8 +95,16 @@ export const listMatches = authedProcedure
 
     return rawMatches.map((match) => ({
       ...match,
-      userA: buildProfile(match.userAId, userMap.get(match.userAId), vibeMap.get(match.userAId)),
-      userB: buildProfile(match.userBId, userMap.get(match.userBId), vibeMap.get(match.userBId)),
+      userA: buildProfile(
+        match.userAId,
+        userMap.get(match.userAId),
+        vibeMap.get(match.userAId),
+      ),
+      userB: buildProfile(
+        match.userBId,
+        userMap.get(match.userBId),
+        vibeMap.get(match.userBId),
+      ),
     }));
   });
 

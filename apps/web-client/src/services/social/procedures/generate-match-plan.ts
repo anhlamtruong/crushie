@@ -374,19 +374,21 @@ export const generateMatchPlan = authedProcedure
     const counterpartUserId =
       match.userAId === ctx.user.id ? match.userBId : match.userAId;
 
-    const [partnerLatestAnalyzerSession] = await ctx.secureDb!.rls(async (tx) => {
-      return tx
-        .select({ city: analyzerSessions.city })
-        .from(analyzerSessions)
-        .where(
-          and(
-            eq(analyzerSessions.userId, counterpartUserId),
-            sql`${analyzerSessions.city} IS NOT NULL`,
-          ),
-        )
-        .orderBy(desc(analyzerSessions.createdAt))
-        .limit(1);
-    });
+    const [partnerLatestAnalyzerSession] = await ctx.secureDb!.rls(
+      async (tx) => {
+        return tx
+          .select({ city: analyzerSessions.city })
+          .from(analyzerSessions)
+          .where(
+            and(
+              eq(analyzerSessions.userId, counterpartUserId),
+              sql`${analyzerSessions.city} IS NOT NULL`,
+            ),
+          )
+          .orderBy(desc(analyzerSessions.createdAt))
+          .limit(1);
+      },
+    );
 
     const locationCity =
       myLatestAnalyzerSession?.city ??
@@ -412,7 +414,10 @@ export const generateMatchPlan = authedProcedure
     try {
       const geocoded = await resolveLocationFromAnalyzerCity(locationCity);
       if (geocoded) {
-        const fetched = await fetchEnvironmentContext(geocoded.lat, geocoded.lng);
+        const fetched = await fetchEnvironmentContext(
+          geocoded.lat,
+          geocoded.lng,
+        );
         if (fetched?.nearbyPlaces?.length) {
           environmentContext = {
             city: fetched.city || locationCity,
