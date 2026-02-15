@@ -36,6 +36,7 @@ export function MetaGlassesSimulator({
   const pollingTimeoutRef = useRef<number | null>(null);
   const inFlightRef = useRef(false);
   const lastSpokenSuggestionRef = useRef("");
+  const lastSpeechContextRef = useRef("");
 
   /* ── State ── */
   const [isMuted, setIsMuted] = useState(false);
@@ -109,6 +110,16 @@ export function MetaGlassesSimulator({
     setDiagnosticLog((prev) => [...prev.slice(-12), msg]);
   }, []);
 
+  /* ── Push speech context immediately when transcript updates ── */
+  useEffect(() => {
+    const transcript = speech.voiceInput.trim();
+    if (!transcript) return;
+    if (transcript === lastSpeechContextRef.current) return;
+
+    lastSpeechContextRef.current = transcript;
+    pushContext("speech", matchName, transcript.slice(0, 100));
+  }, [speech.voiceInput, pushContext, matchName]);
+
   /* ── Polling ── */
   const pollSuggestion = useCallback(async () => {
     if (inFlightRef.current) return;
@@ -145,9 +156,6 @@ export function MetaGlassesSimulator({
       if (next) {
         pushContext("analysis", "Crushie says", next.slice(0, 120));
       }
-      if (speech.voiceInput) {
-        pushContext("speech", matchName, speech.voiceInput.slice(0, 100));
-      }
       pushContext(
         "emotion",
         "Vibe sync",
@@ -172,7 +180,6 @@ export function MetaGlassesSimulator({
     }
   }, [
     speech.currentTopic,
-    speech.voiceInput,
     liveSuggestionMutation,
     playTts,
     pushDiag,
