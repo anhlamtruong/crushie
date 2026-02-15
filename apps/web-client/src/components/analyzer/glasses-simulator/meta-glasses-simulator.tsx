@@ -1,8 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Webcam from "react-webcam";
+import ReactWebcam, { type WebcamProps } from "react-webcam";
 import { useMutation } from "@tanstack/react-query";
+
+// react-webcam ships class-component types incompatible with React 19's JSX types.
+// Cast to a function component so it can be rendered as JSX.
+const Webcam = ReactWebcam as unknown as React.FC<
+  Partial<WebcamProps> & { ref?: React.Ref<ReactWebcam> }
+>;
 import { useTRPC } from "@/trpc/client";
 
 import type {
@@ -26,7 +32,7 @@ export function MetaGlassesSimulator({
   matchName = "your match",
 }: MetaGlassesSimulatorProps) {
   const trpc = useTRPC();
-  const webcamRef = useRef<Webcam | null>(null);
+  const webcamRef = useRef<ReactWebcam | null>(null);
   const pollingTimeoutRef = useRef<number | null>(null);
   const inFlightRef = useRef(false);
   const lastSpokenSuggestionRef = useRef("");

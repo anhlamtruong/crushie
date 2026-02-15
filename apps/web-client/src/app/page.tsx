@@ -48,7 +48,11 @@ const fadeUp: Variants = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.12, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
+    transition: {
+      delay: i * 0.12,
+      duration: 0.6,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
   }),
 };
 
@@ -178,7 +182,7 @@ function MagneticButton({ children }: { children: React.ReactNode }) {
     <motion.div
       ref={ref}
       style={{ x: springX, y: springY }}
-      onMouseMove={(e) => {
+      onMouseMove={(e: React.MouseEvent<HTMLDivElement>) => {
         const rect = ref.current?.getBoundingClientRect();
         if (!rect) return;
         const cx = rect.left + rect.width / 2;
@@ -641,9 +645,7 @@ export default function HomePage() {
       {/* ================================================================
           FEATURES – "How It Works" Section
           ================================================================ */}
-      <ScrollSection
-        className="relative z-10 py-24 md:py-32"
-      >
+      <ScrollSection className="relative z-10 py-24 md:py-32">
         <div className="container mx-auto px-4" id="features">
           <motion.div
             className="text-center mb-16"
@@ -665,8 +667,8 @@ export default function HomePage() {
             </h2>
             <p className="mt-4 max-w-2xl mx-auto text-muted-foreground text-lg">
               Crushie doesn&apos;t just find you a match. It teaches you how to
-              date with AI-powered coaching, real-time social cues, and
-              gamified missions.
+              date with AI-powered coaching, real-time social cues, and gamified
+              missions.
             </p>
           </motion.div>
 
@@ -697,7 +699,10 @@ export default function HomePage() {
                 tagIcon: Star,
               },
             ].map(
-              ({ icon: Icon, title, desc, gradient, tag, tagIcon: TagIcon }, i) => (
+              (
+                { icon: Icon, title, desc, gradient, tag, tagIcon: TagIcon },
+                i,
+              ) => (
                 <motion.div
                   key={title}
                   className="group relative rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden"
@@ -910,7 +915,11 @@ export default function HomePage() {
           ================================================================ */}
       <ScrollSection className="relative z-10 py-24 md:py-32 border-y border-border/50 bg-gradient-to-b from-background via-primary/[0.015] to-background">
         <div className="container mx-auto px-4">
-          <motion.div className="text-center mb-16" variants={fadeUp} custom={0}>
+          <motion.div
+            className="text-center mb-16"
+            variants={fadeUp}
+            custom={0}
+          >
             <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary mb-4">
               <Zap className="h-3.5 w-3.5" />
               Built for Scale
@@ -985,7 +994,11 @@ export default function HomePage() {
           ================================================================ */}
       <ScrollSection className="relative z-10 py-24 md:py-32">
         <div className="container mx-auto px-4">
-          <motion.div className="text-center mb-16" variants={fadeUp} custom={0}>
+          <motion.div
+            className="text-center mb-16"
+            variants={fadeUp}
+            custom={0}
+          >
             <h2 className="text-3xl md:text-5xl font-black text-foreground">
               Everything You Need to{" "}
               <span className="bg-gradient-to-r from-primary to-pink-400 bg-clip-text text-transparent">
@@ -1062,7 +1075,11 @@ export default function HomePage() {
           ================================================================ */}
       <ScrollSection className="relative z-10 py-24 md:py-32 border-y border-border/50">
         <div className="container mx-auto px-4">
-          <motion.div className="text-center mb-16" variants={fadeUp} custom={0}>
+          <motion.div
+            className="text-center mb-16"
+            variants={fadeUp}
+            custom={0}
+          >
             <h2 className="text-3xl md:text-5xl font-black text-foreground">
               Real Stories,{" "}
               <span className="bg-gradient-to-r from-primary to-pink-400 bg-clip-text text-transparent">
@@ -1235,8 +1252,8 @@ export default function HomePage() {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
             >
-              &ldquo;The best thing to hold onto in life is each
-              other.&rdquo; &mdash; Audrey Hepburn{" "}
+              &ldquo;The best thing to hold onto in life is each other.&rdquo;
+              &mdash; Audrey Hepburn{" "}
               <Heart className="inline h-3 w-3 text-primary/50 fill-primary/50" />
             </motion.p>
 

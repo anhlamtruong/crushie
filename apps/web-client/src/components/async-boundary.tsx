@@ -26,11 +26,16 @@ export function AsyncBoundary({
   return (
     // 1. Catches Retry logic from React Query
     <QueryErrorResetBoundary>
-      {({ reset }) => (
+      {({ reset }: { reset: () => void }) => (
         // 2. Catches Errors (throwing)
+        // @ts-expect-error -- react-error-boundary JSX compat with React 19 types
         <ErrorBoundary
           onReset={reset}
-          fallbackRender={(errorFallback || DefaultError) as any}
+          fallbackRender={
+            (errorFallback || DefaultError) as (
+              props: FallbackProps,
+            ) => ReactNode
+          }
         >
           {/* 3. Catches Loading (suspending) */}
           <Suspense fallback={loadingFallback}>{children}</Suspense>

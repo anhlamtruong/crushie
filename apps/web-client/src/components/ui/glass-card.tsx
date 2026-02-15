@@ -55,8 +55,8 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
         ref={ref}
         className={cn(
           "rounded-2xl will-change-transform",
-          VARIANT_CLASSES[variant],
-          GLOW_CLASSES[glowColor],
+          VARIANT_CLASSES[variant as keyof typeof VARIANT_CLASSES],
+          GLOW_CLASSES[glowColor as keyof typeof GLOW_CLASSES],
           className,
         )}
         {...motionProps}
