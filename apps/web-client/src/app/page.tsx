@@ -1,15 +1,15 @@
-"use client";
-
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { Navbar } from "@/components/navbar";
 import {
-  Heart,
-  HeartHandshake,
+  Brain,
+  Target,
+  Zap,
+  Shield,
   Sparkles,
   MessageCircleHeart,
-  Palette,
+  TrendingUp,
   Users,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -56,7 +56,7 @@ export default function HomePage() {
                     ease: "easeInOut",
                   }}
                 >
-                  <HeartIcon className="h-10 w-10 text-primary-foreground" />
+                  <Brain className="h-10 w-10 text-primary-foreground" />
                 </motion.div>
               </div>
             </LoveSparkle>
@@ -70,8 +70,10 @@ export default function HomePage() {
               transition={{ delay: 0.2 }}
             >
               <span className="bg-linear-to-r from-primary via-pink-400 to-rose-400 bg-clip-text text-transparent">
-                Crushie
+                Dating Intelligence.
               </span>
+              <br />
+              <span>Not Dating Apps.</span>
             </motion.h1>
             <motion.p
               className="max-w-2xl text-lg text-muted-foreground sm:text-xl"
@@ -79,9 +81,8 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
             >
-              Where love meets technology. Connect hearts, discover your vibe
-              profile, and spread love through every pixel.{" "}
-              <Heart className="inline h-4 w-4 text-primary fill-primary" />
+              <strong>Crushie</strong> is your AI-powered date coach. We generate 1536-dimension Vibe Profiles, deliver tactical conversation scripts, and design mission-based dates.{" "}
+              <Brain className="inline h-4 w-4 text-primary fill-primary" />
             </motion.p>
           </div>
 
@@ -94,8 +95,8 @@ export default function HomePage() {
             <SignedOut>
               <SignInButton mode="modal">
                 <Button size="lg" className="gap-2 shadow-lg shadow-primary/20">
-                  <Heart className="h-4 w-4" />
-                  Fall in Love
+                  <Zap className="h-4 w-4" />
+                  Start Intelligence Training
                 </Button>
               </SignInButton>
             </SignedOut>
@@ -107,8 +108,8 @@ export default function HomePage() {
                     size="lg"
                     className="gap-2 shadow-lg shadow-primary/20"
                   >
-                    <Heart className="h-4 w-4" />
-                    My Love Dashboard
+                    <Target className="h-4 w-4" />
+                    Launch Mission Control
                   </Button>
                 </Link>
                 <UserButton />
@@ -120,24 +121,24 @@ export default function HomePage() {
           <div className="grid w-full max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
             {[
               {
-                icon: HeartHandshake,
-                title: "Love Connections",
-                desc: "Discover your love language, compatibility vibes, and connect with kindred hearts.",
+                icon: Brain,
+                title: "1536-D Vibe Intelligence",
+                desc: "Multimodal AI analyzes personality from images + behavioral quiz. Deep learning generates your unique profile—not a 5-question compatibility test.",
               },
               {
-                icon: MessageCircleHeart,
-                title: "Love Messages",
-                desc: "AI-powered romantic suggestions and heartfelt messages for every occasion.",
+                icon: Target,
+                title: "Tactical Mission System",
+                desc: "AI designs structured, mission-based dates with conversation scripts and real-time coaching. Strategic execution, zero awkward silences.",
               },
               {
-                icon: Palette,
-                title: "Love Themes",
-                desc: "20+ beautiful theme presets to express your romantic aesthetic. Make it truly yours.",
+                icon: Shield,
+                title: "Social Safety Protocol",
+                desc: "Friend filter verification, vibe vouching, and liveness detection. Your network validates connections before first contact.",
               },
               {
                 icon: Users,
-                title: "Love Community",
-                desc: "Join a community that vibes with love, kindness, and creativity together.",
+                title: "Study-to-Love Community",
+                desc: "Join dating intelligence cohorts. Share strategies, track performance analytics, and master the science of connection together.",
               },
             ].map(({ icon: Icon, title, desc }, i) => (
               <motion.div
@@ -162,16 +163,15 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Love quote footer */}
+          {/* Footer quote */}
           <motion.p
             className="mt-4 text-sm italic text-muted-foreground/60 text-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
           >
-            &ldquo;The best thing to hold onto in life is each other.&rdquo;
-            &mdash; Audrey Hepburn{" "}
-            <Heart className="inline h-3 w-3 text-primary/50 fill-primary/50" />
+            &ldquo;Stop swiping. Start studying. Master the science of connection.&rdquo;
+            <Sparkles className="inline h-3 w-3 text-primary/50 fill-primary/50 ml-1" />
           </motion.p>
         </div>
       </main>
