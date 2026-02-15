@@ -14,6 +14,7 @@ import analyzerRouter from "./routes/analyzer.js";
 import evaluateMatchRouter from "./routes/evaluate-match.js";
 import verifyIdentityRouter from "./routes/verify-identity.js";
 import realtimeCoachRouter from "./routes/realtime-coach.js";
+import vibeMatchRouter from "./routes/vibe-match.js";
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use("/api/analyzer", analyzerRouter);
 app.use("/api/evaluate-match", evaluateMatchRouter);
 app.use("/api/verify-identity", verifyIdentityRouter);
 app.use("/api/realtime-coach", realtimeCoachRouter);
+app.use("/api/vibe-match", vibeMatchRouter);
 
 // Error handler
 app.use(

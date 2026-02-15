@@ -160,6 +160,8 @@ export type LiveSuggestionData = {
   confidence: number;
 };
 
+// ── LLM Matches ───────────────────────────────────────────
+
 // ============================================================================
 // HTTP Client
 // ============================================================================
@@ -386,5 +388,28 @@ export async function getLiveSuggestion(input: {
     targetVibe: input.targetVibe,
     currentTopic: input.currentTopic ?? "",
     language: input.language ?? "Respond in English.",
+  });
+}
+
+// ============================================================================
+// Vibe Match
+// ============================================================================
+
+export async function vibeMatch(input: {
+  profile: ProfileSummary;
+  otherUsers: ProfileSummary[];
+  limit: number;
+  vectorSimilarity?: number;
+  useMock?: boolean;
+}): Promise<LLMResponse<LLMVibeProfileData[]>> {
+  console.log("hihi")
+  const endpoint = input.useMock
+    ? "/api/vibe-match/mock"
+    : `/api/vibe-match`;
+
+  return llmFetch<LLMVibeProfileData[]>(endpoint, {
+    profile: input.profile,
+    otherUsers: input.otherUsers,
+    vectorSimilarity: input.vectorSimilarity,
   });
 }
