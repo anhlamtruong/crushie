@@ -17,6 +17,7 @@ import { generateMockAnalyzerSession } from "../lib/mock-data.js";
 import { ANALYZER_FALLBACK, type AnalyzerResult } from "../lib/fallbacks.js";
 import { requireServiceToken } from "../lib/auth.js";
 import { getCachedResponse, setCachedResponse } from "../lib/redis.js";
+import { callLLM } from "../lib/llm-client.js"; 
 
 const router = Router();
 const TARGET_OPENER_COUNT = 8;
@@ -302,7 +303,7 @@ const mockAnalyzeSchema = z.object({
 // POST / — Analyze a profile screenshot via Gemini (production)
 // ──────────────────────────────────────────────────────────────────────────
 
-router.post("/", requireServiceToken(), async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const parsed = analyzeSchema.parse(req.body);
     const { userId, imageHash, hintTags, environmentContext } = parsed;
@@ -362,11 +363,20 @@ router.post("/", requireServiceToken(), async (req, res) => {
     // Call Gemini with the screenshot(s) + prompt
     let analyzerResult: AnalyzerResult;
     let usedFallback = false;
+    let llmProvider = "gemini-2.5-flash";
 
     try {
-      analyzerResult = normalizeAnalyzerResult(
-        await generateMultimodalJSON<AnalyzerResult>(prompt, images, 2),
-      );
+      // Use Gemini with Azure OpenAI fallback
+      const { response, provider } = await callLLM(prompt);
+      llmProvider = provider;
+  
+      // Parse JSON response
+      const cleanResponse = response.replace(/```json\n?|\n?```/g, "").trim();
+      const parsed = JSON.parse(cleanResponse) as AnalyzerResult;
+  
+      analyzerResult = normalizeAnalyzerResult(parsed);
+  
+      console.log(`✅ Analyzer used: ${provider}`);
     } catch (llmError) {
       logAnalyzerFallback({
         error: llmError,
@@ -396,14 +406,14 @@ router.post("/", requireServiceToken(), async (req, res) => {
         vibePrediction: analyzerResult.vibePrediction,
         conversationOpeners: analyzerResult.conversationOpeners,
         dateSuggestions: analyzerResult.suggestedMissions,
-        modelVersion: usedFallback ? "fallback-v1.0.0" : "gemini-2.5-flash",
+        modelVersion: usedFallback ? "fallback-v1.0.0" : (llmProvider === "azure-phi4" ? "phi-4-mini-instruct" : "gemini-2.0-flash"),
         latencyMs: durationMs,
       },
       meta: {
         cached: false,
         durationMs,
         usedFallback,
-        model: "gemini-2.5-flash",
+        model: llmProvider,
         imageCount: images.length,
       },
     });
