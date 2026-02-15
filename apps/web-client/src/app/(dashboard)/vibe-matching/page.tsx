@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles, Heart, Zap, RefreshCw } from "lucide-react";
@@ -16,9 +22,7 @@ export default function VibeMatchingPage() {
   const trpc = useTRPC();
 
   // Use the actual vibeMatch query from your codebase
-  const vibeMatchQuery = useQuery(
-    trpc.llm.vibeMatch.queryOptions({})
-  );
+  const vibeMatchQuery = useQuery(trpc.llm.vibeMatch.queryOptions({}));
 
   const getEnergyIcon = (energy: string) => {
     switch (energy) {
@@ -55,8 +59,12 @@ export default function VibeMatchingPage() {
   const isLoading = vibeMatchQuery.isLoading;
   const error = vibeMatchQuery.error;
   const response = vibeMatchQuery.data; // This is the LLMResponse wrapper
-  // Extract the actual data from the response
-  const matches = response?.topMatches; // The compatibility data array
+  // Extract the actual matches from either response shape
+  const matches = response
+    ? Array.isArray(response.data)
+      ? response.data
+      : response.data.matches
+    : [];
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -67,14 +75,17 @@ export default function VibeMatchingPage() {
           Vibe Matching
         </h1>
         <p className="text-muted-foreground">
-          Find your perfect vibe match based on AI-analyzed energy, interests, and style
+          Find your perfect vibe match based on AI-analyzed energy, interests,
+          and style
         </p>
       </div>
       {/* Loading State */}
       {isLoading && (
         <div className="flex flex-col items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
-          <span className="text-muted-foreground">Finding your vibe matches...</span>
+          <span className="text-muted-foreground">
+            Finding your vibe matches...
+          </span>
           <span className="text-xs text-muted-foreground mt-1">
             Analyzing compatibility with AI
           </span>
@@ -86,9 +97,9 @@ export default function VibeMatchingPage() {
         <Card className="border-red-500">
           <CardContent className="pt-6">
             <p className="text-red-500">Error: {error.message}</p>
-            <Button 
-              onClick={() => vibeMatchQuery.refetch()} 
-              variant="outline" 
+            <Button
+              onClick={() => vibeMatchQuery.refetch()}
+              variant="outline"
               className="mt-4"
             >
               Try Again
@@ -101,14 +112,15 @@ export default function VibeMatchingPage() {
       {matches && Array.isArray(matches) && matches.length > 0 && (
         <>
           <div className="mb-4 text-sm text-muted-foreground flex items-center justify-between">
-            <span>
-              Showing {matches.length} matches
-            </span>
+            <span>Showing {matches.length} matches</span>
           </div>
 
           <div className="space-y-4">
             {matches.map((match: any, index: number) => (
-              <Card key={match.userId || index} className="hover:shadow-lg transition-shadow">
+              <Card
+                key={match.userId || index}
+                className="hover:shadow-lg transition-shadow"
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -117,7 +129,9 @@ export default function VibeMatchingPage() {
                           #{index + 1}
                         </span>
                         <CardTitle className="text-xl">
-                          {match.vibeName || match.profile?.vibeName || "Unknown"}
+                          {match.vibeName ||
+                            match.profile?.vibeName ||
+                            "Unknown"}
                         </CardTitle>
                         {getEnergyIcon(match.energy || match.profile?.energy)}
                       </div>
@@ -146,17 +160,24 @@ export default function VibeMatchingPage() {
                   {/* Energy Level */}
                   <div>
                     <span className="text-sm font-medium">Energy:</span>
-                    <Badge className={`ml-2 ${getEnergyColor(match.energy || match.profile?.energy)}`}>
+                    <Badge
+                      className={`ml-2 ${getEnergyColor(match.energy || match.profile?.energy)}`}
+                    >
                       {match.energy || match.profile?.energy}
                     </Badge>
                   </div>
 
                   {/* Interest Tags */}
-                  {(match.interestTags || match.profile?.interestTags)?.length > 0 && (
+                  {(match.interestTags || match.profile?.interestTags)?.length >
+                    0 && (
                     <div>
-                      <span className="text-sm font-medium block mb-2">Interests:</span>
+                      <span className="text-sm font-medium block mb-2">
+                        Interests:
+                      </span>
                       <div className="flex flex-wrap gap-2">
-                        {(match.interestTags || match.profile?.interestTags).map((tag: string, i: number) => (
+                        {(
+                          match.interestTags || match.profile?.interestTags
+                        ).map((tag: string, i: number) => (
                           <Badge key={i} variant="secondary">
                             {tag}
                           </Badge>
@@ -166,15 +187,20 @@ export default function VibeMatchingPage() {
                   )}
 
                   {/* Style Tags */}
-                  {(match.styleTags || match.profile?.styleTags)?.length > 0 && (
+                  {(match.styleTags || match.profile?.styleTags)?.length >
+                    0 && (
                     <div>
-                      <span className="text-sm font-medium block mb-2">Style:</span>
+                      <span className="text-sm font-medium block mb-2">
+                        Style:
+                      </span>
                       <div className="flex flex-wrap gap-2">
-                        {(match.styleTags || match.profile?.styleTags).map((tag: string, i: number) => (
-                          <Badge key={i} variant="outline">
-                            {tag}
-                          </Badge>
-                        ))}
+                        {(match.styleTags || match.profile?.styleTags).map(
+                          (tag: string, i: number) => (
+                            <Badge key={i} variant="outline">
+                              {tag}
+                            </Badge>
+                          ),
+                        )}
                       </div>
                     </div>
                   )}
@@ -182,13 +208,17 @@ export default function VibeMatchingPage() {
                   {/* Mood Tags */}
                   {(match.moodTags || match.profile?.moodTags)?.length > 0 && (
                     <div>
-                      <span className="text-sm font-medium block mb-2">Mood:</span>
+                      <span className="text-sm font-medium block mb-2">
+                        Mood:
+                      </span>
                       <div className="flex flex-wrap gap-2">
-                        {(match.moodTags || match.profile?.moodTags).map((tag: string, i: number) => (
-                          <Badge key={i} variant="outline">
-                            {tag}
-                          </Badge>
-                        ))}
+                        {(match.moodTags || match.profile?.moodTags).map(
+                          (tag: string, i: number) => (
+                            <Badge key={i} variant="outline">
+                              {tag}
+                            </Badge>
+                          ),
+                        )}
                       </div>
                     </div>
                   )}
@@ -205,7 +235,9 @@ export default function VibeMatchingPage() {
                   {/* Common Ground */}
                   {match.commonGround && match.commonGround.length > 0 && (
                     <div>
-                      <span className="text-sm font-medium block mb-2">Common Ground:</span>
+                      <span className="text-sm font-medium block mb-2">
+                        Common Ground:
+                      </span>
                       <div className="flex flex-wrap gap-2">
                         {match.commonGround.map((item: string, i: number) => (
                           <Badge key={i} variant="default">
@@ -219,7 +251,9 @@ export default function VibeMatchingPage() {
                   {/* Conversation Starter */}
                   {match.conversationStarter && (
                     <div className="bg-primary/10 p-3 rounded-lg">
-                      <p className="text-sm font-medium mb-1">💬 Conversation Starter:</p>
+                      <p className="text-sm font-medium mb-1">
+                        💬 Conversation Starter:
+                      </p>
                       <p className="text-sm">{match.conversationStarter}</p>
                     </div>
                   )}
@@ -230,7 +264,7 @@ export default function VibeMatchingPage() {
                       <Heart className="w-4 h-4 mr-2" />
                       Connect
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline"
                       onClick={() => {
                         // Navigate to detailed profile view
