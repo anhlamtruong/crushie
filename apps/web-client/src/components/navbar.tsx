@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { VerificationBadge } from "@/components/verification-badge";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+  useAuth,
+} from "@clerk/nextjs";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -63,8 +69,13 @@ const navItems = [
 export function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isSignedIn } = useAuth();
   const trpc = useTRPC();
-  const userQuery = useQuery(trpc.users.getMe.queryOptions());
+  const userQuery = useQuery({
+    ...trpc.users.getMe.queryOptions(),
+    enabled: Boolean(isSignedIn),
+    retry: false,
+  });
 
   // Close mobile menu on route change
   useEffect(() => {

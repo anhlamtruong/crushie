@@ -37,9 +37,11 @@ export function MetaGlassesSimulator({
   const inFlightRef = useRef(false);
   const lastSpokenSuggestionRef = useRef("");
   const lastSpeechContextRef = useRef("");
+  const voiceInputRef = useRef("");
 
   /* ── State ── */
   const [isMuted, setIsMuted] = useState(false);
+  const isMutedRef = useRef(false);
   const [frameType, setFrameType] = useState<GlassesFrameType>("wayfarer");
   const [suggestion, setSuggestion] = useState("Reading the room...");
   const [visualCue, setVisualCue] = useState("Scanning environment");
@@ -65,6 +67,12 @@ export function MetaGlassesSimulator({
   const liveSuggestionMutation = useMutation(
     trpc.realtime.getLiveSuggestion.mutationOptions(),
   );
+
+  /* ── Stop TTS immediately when muting ── */
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+    if (isMuted) stopAudio();
+  }, [isMuted, stopAudio]);
 
   /* ── Context entry helper ── */
   const pushContext = useCallback(
@@ -113,6 +121,7 @@ export function MetaGlassesSimulator({
   /* ── Push speech context immediately when transcript updates ── */
   useEffect(() => {
     const transcript = speech.voiceInput.trim();
+    voiceInputRef.current = transcript;
     if (!transcript) return;
     if (transcript === lastSpeechContextRef.current) return;
 
@@ -136,7 +145,7 @@ export function MetaGlassesSimulator({
       const res = await liveSuggestionMutation.mutateAsync({
         frame: base64,
         targetVibe,
-        currentTopic: speech.currentTopic,
+        currentTopic: voiceInputRef.current || speech.currentTopic,
         language: languageRef.current.promptHint,
       });
       const next = res.suggestion.trim();
@@ -170,7 +179,7 @@ export function MetaGlassesSimulator({
       ) {
         lastSpokenSuggestionRef.current = next;
         pushDiag("[TTS] PROJECTING VOICE...");
-        await playTts(next, isMuted);
+        await playTts(next, isMutedRef.current);
       }
     } catch {
       pushDiag("[ERR] LINK UNSTABLE, RETRYING...");
@@ -179,14 +188,12 @@ export function MetaGlassesSimulator({
       inFlightRef.current = false;
     }
   }, [
-    speech.currentTopic,
     liveSuggestionMutation,
     playTts,
     pushDiag,
     pushContext,
     targetVibe,
     matchName,
-    isMuted,
   ]);
 
   useEffect(() => {

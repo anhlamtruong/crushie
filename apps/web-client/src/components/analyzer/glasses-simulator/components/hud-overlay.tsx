@@ -131,7 +131,7 @@ export function HudOverlay({
       )}
 
       {/* ── BOTTOM-LEFT: Voice Waveform + intake ── */}
-      <div className="absolute bottom-[10%] left-[8%] flex flex-col gap-1">
+      <div className="absolute bottom-[10%] left-[8%] flex max-w-[40%] flex-col gap-1">
         <div className="flex items-center gap-2">
           <AudioWaveform
             active={isListening}
@@ -144,13 +144,31 @@ export function HudOverlay({
             {isListening ? "INTAKE ACTIVE" : "INTAKE IDLE"}
           </span>
         </div>
-        {voiceInput && (
-          <p
-            className={`max-w-45 truncate font-mono text-[8px] ${theme.text}`}
-            style={{ textShadow: `0 0 6px ${theme.glow}` }}
+        {voiceInput ? (
+          <div
+            className={`rounded ${theme.panelBg} ${theme.border} border px-2 py-1 backdrop-blur-sm`}
           >
-            &quot;{voiceInput}&quot;
-          </p>
+            <span
+              className={`font-mono text-[7px] uppercase tracking-[0.15em] ${theme.textDim}`}
+            >
+              YOU SAID
+            </span>
+            <p
+              className={`mt-0.5 line-clamp-3 font-mono text-[10px] leading-tight ${theme.text}`}
+              style={{ textShadow: `0 0 6px ${theme.glow}` }}
+            >
+              &quot;{voiceInput}&quot;
+            </p>
+          </div>
+        ) : (
+          isListening && (
+            <span
+              className={`font-mono text-[8px] italic ${theme.textDim}`}
+              style={{ textShadow: `0 0 4px ${theme.glow}` }}
+            >
+              Listening…
+            </span>
+          )
         )}
       </div>
 
