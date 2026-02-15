@@ -33,6 +33,7 @@ interface HudOverlayProps {
   confidence: number;
   targetVibe: string;
   screenshotFlash: boolean;
+  isMobile: boolean;
 }
 
 export function HudOverlay({
@@ -54,7 +55,10 @@ export function HudOverlay({
   confidence,
   targetVibe,
   screenshotFlash,
+  isMobile,
 }: HudOverlayProps) {
+  const statusTicker = diagLog[diagLog.length - 1] ?? "[SYS] STANDBY";
+
   return (
     <div
       className={`pointer-events-none absolute inset-0 ${theme.hudClass}`}
@@ -65,9 +69,11 @@ export function HudOverlay({
       }}
     >
       {/* ── TOP-LEFT: Status bar ── */}
-      <div className="absolute left-[8%] top-[8%] flex items-center gap-2">
+      <div
+        className={`absolute left-3 top-3 flex items-center gap-2 ${isMobile ? "text-rose-500/80" : "md:left-[8%] md:top-[8%]"}`}
+      >
         <span
-          className={`font-mono text-[8px] tracking-wider ${theme.textDim}`}
+          className={`font-mono ${isMobile ? "text-[7px]" : "text-[8px]"} tracking-wider ${theme.textDim}`}
           style={{ textShadow: `0 0 4px ${theme.glow}` }}
         >
           {clockStr}
@@ -99,8 +105,8 @@ export function HudOverlay({
         )}
       </div>
 
-      {/* ── TOP-LEFT (row 2): Language picker ── */}
-      <div className="absolute left-[8%] top-[15%]">
+      {/* ── TOP-LEFT (row 2): Language picker */}
+      <div className="absolute left-[8%] top-[15%] hidden lg:block">
         <LanguagePicker
           languages={languages}
           selected={language}
@@ -110,20 +116,32 @@ export function HudOverlay({
       </div>
 
       {/* ── LEFT-CENTER: Context Panel ── */}
-      <div className="absolute left-[8%] top-[24%]">
+      <div className="absolute left-[8%] top-[24%] hidden lg:block">
         <ContextPanel entries={contextEntries} theme={theme} />
       </div>
 
       {/* ── TOP-RIGHT: Crushie Suggestion Box ── */}
-      <div className="absolute right-[8%] top-[10%]">
+      <div className="absolute bottom-20 left-3 right-3 top-auto md:left-auto md:right-[8%] md:top-[10%] md:bottom-auto">
         <CrushieDisplay
           suggestion={suggestion}
           visualCue={visualCue}
           isPending={isPending}
           theme={theme}
           languageFlag={language.flag}
+          compactMobile={isMobile}
         />
       </div>
+
+      {/* Mobile top status ticker */}
+      {isMobile && (
+        <div className="absolute left-3 right-3 top-12 rounded-md border border-rose-400/30 bg-black/50 px-2 py-1 backdrop-blur-md">
+          <p
+            className={`truncate font-mono text-[9px] uppercase tracking-wide text-rose-500/80`}
+          >
+            {statusTicker}
+          </p>
+        </div>
+      )}
 
       {/* Screenshot flash */}
       {screenshotFlash && (
@@ -131,12 +149,13 @@ export function HudOverlay({
       )}
 
       {/* ── BOTTOM-LEFT: Voice Waveform + intake ── */}
-      <div className="absolute bottom-[10%] left-[8%] flex flex-col gap-1">
+      <div className="absolute bottom-18 left-3 flex flex-col gap-1 md:bottom-[10%] md:left-[8%]">
         <div className="flex items-center gap-2">
           <AudioWaveform
             active={isListening}
             accentClass={`${theme.accent} bg-current`}
             glowColor={theme.glow}
+            compact={isMobile}
           />
           <span
             className={`font-mono text-[7px] uppercase tracking-[0.15em] ${theme.textDim}`}
@@ -146,7 +165,7 @@ export function HudOverlay({
         </div>
         {voiceInput && (
           <p
-            className={`max-w-45 truncate font-mono text-[8px] ${theme.text}`}
+            className={`max-w-45 truncate font-mono text-[8px] ${theme.text} hidden lg:block`}
             style={{ textShadow: `0 0 6px ${theme.glow}` }}
           >
             &quot;{voiceInput}&quot;
@@ -155,7 +174,7 @@ export function HudOverlay({
       </div>
 
       {/* ── BOTTOM-RIGHT: Diagnostic Log + Vibe Badge ── */}
-      <div className="absolute bottom-[10%] right-[8%] flex flex-col items-end gap-1">
+      <div className="absolute bottom-[10%] right-[8%] hidden flex-col items-end gap-1 lg:flex">
         <DiagnosticLog
           entries={diagLog}
           textClass={theme.text}
@@ -175,6 +194,25 @@ export function HudOverlay({
           </span>
         </div>
       </div>
+
+      {/* ── Mobile compact badge ── */}
+      <div className="absolute bottom-4 right-3 lg:hidden">
+        <div
+          className={`rounded-full ${theme.border} border ${theme.panelBg} px-2 py-0.5 backdrop-blur-sm`}
+        >
+          <span
+            className={`font-mono text-[7px] uppercase tracking-widest ${theme.accent}`}
+            style={{ textShadow: `0 0 6px ${theme.glow}` }}
+          >
+            {Math.round(confidence * 100)}% Sync
+          </span>
+        </div>
+      </div>
+
+      {/* Mobile readability gradient */}
+      {isMobile && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/80 via-black/45 to-transparent" />
+      )}
 
       {/* ── Aviator: Targeting brackets ── */}
       {frameType === "aviator" && (

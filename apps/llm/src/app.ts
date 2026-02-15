@@ -14,6 +14,8 @@ import analyzerRouter from "./routes/analyzer.js";
 import evaluateMatchRouter from "./routes/evaluate-match.js";
 import verifyIdentityRouter from "./routes/verify-identity.js";
 import realtimeCoachRouter from "./routes/realtime-coach.js";
+import gradeInteractionRouter from "./routes/grade-interaction.js";
+import userSummaryNarrativeRouter from "./routes/user-summary-narrative.js";
 
 const app = express();
 
@@ -42,6 +44,8 @@ app.use("/api/analyzer", analyzerRouter);
 app.use("/api/evaluate-match", evaluateMatchRouter);
 app.use("/api/verify-identity", verifyIdentityRouter);
 app.use("/api/realtime-coach", realtimeCoachRouter);
+app.use("/api/grade-interaction", gradeInteractionRouter);
+app.use("/api/user-summary-narrative", userSummaryNarrativeRouter);
 
 // Error handler
 app.use(

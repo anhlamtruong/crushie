@@ -191,6 +191,42 @@ export const COMPATIBILITY_FALLBACK: CompatibilityResult = {
 };
 
 // ============================================================================
+// Academy SIQ Fallbacks
+// ============================================================================
+
+export type InteractionGradeResult = {
+  siq_delta: number;
+  feedback_summary: string;
+  skill_metrics: {
+    initiation_delta: number;
+    empathy_delta: number;
+    planning_delta: number;
+    consistency_delta: number;
+  };
+};
+
+export const INTERACTION_GRADE_FALLBACK: InteractionGradeResult = {
+  siq_delta: 6,
+  feedback_summary:
+    "Your energy is warming up beautifully. Keep asking specific follow-up questions and mirror one emotional cue each turn to level up your SIQ faster.",
+  skill_metrics: {
+    initiation_delta: 2,
+    empathy_delta: 2,
+    planning_delta: 1,
+    consistency_delta: 1,
+  },
+};
+
+export type UserSummaryNarrativeResult = {
+  narrative: string;
+};
+
+export const USER_SUMMARY_NARRATIVE_FALLBACK: UserSummaryNarrativeResult = {
+  narrative:
+    "You are a curious romantic building steady momentum with every interaction. Your SIQ journey shows real promise—keep balancing playful initiation with deeper listening to unlock your next level.",
+};
+
+// ============================================================================
 // Pipeline 4: Identity Verification Fallback
 // ============================================================================
 

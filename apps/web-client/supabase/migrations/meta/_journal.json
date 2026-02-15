@@ -36,6 +36,13 @@
       "when": 1771087785392,
       "tag": "0004_great_mystique",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1771125978307,
+      "tag": "0005_slim_zeigeist",
+      "breakpoints": true
     }
   ]
 }

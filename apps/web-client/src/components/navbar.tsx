@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Palette,
   Rocket,
+  GraduationCap,
   Menu,
   X,
   Heart,
@@ -43,6 +44,11 @@ const navItems = [
     label: "Onboard",
     href: "/on-board",
     icon: Rocket,
+  },
+  {
+    label: "Academy",
+    href: "/academy",
+    icon: GraduationCap,
   },
   {
     label: "Theme Editor",

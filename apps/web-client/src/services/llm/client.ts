@@ -136,6 +136,30 @@ export type MatchPlanEnvironmentContext = {
   };
 };
 
+// ── Academy SIQ types ─────────────────────────────────────────────────────
+
+export type LLMInteractionTurn = {
+  role: "me" | "partner";
+  text: string;
+};
+
+export type LLMGradeSkillMetrics = {
+  initiation_delta: number;
+  empathy_delta: number;
+  planning_delta: number;
+  consistency_delta: number;
+};
+
+export type LLMInteractionGradeData = {
+  siq_delta: number;
+  feedback_summary: string;
+  skill_metrics: LLMGradeSkillMetrics;
+};
+
+export type LLMUserSummaryNarrativeData = {
+  narrative: string;
+};
+
 // ── Identity verification types ───────────────────────────────────────────
 
 export type LLMImageInput = {
@@ -193,6 +217,42 @@ async function llmFetch<T>(
     method: "POST",
     headers,
     body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    throw new LLMServiceError(
+      res.status,
+      (errorBody as { error?: string }).error ||
+        `LLM service returned ${res.status}`,
+      (errorBody as { details?: unknown }).details,
+    );
+  }
+
+  return (await res.json()) as LLMResponse<T>;
+}
+
+async function llmGet<T>(
+  path: string,
+  params: Record<string, string | number | boolean | undefined>,
+): Promise<LLMResponse<T>> {
+  const searchParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined) continue;
+    searchParams.set(key, String(value));
+  }
+
+  const url = `${LLM_BASE_URL}${path}?${searchParams.toString()}`;
+  const headers: Record<string, string> = {};
+
+  if (LLM_SERVICE_TOKEN) {
+    headers["X-Service-Token"] = LLM_SERVICE_TOKEN;
+  }
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers,
   });
 
   if (!res.ok) {
@@ -379,12 +439,75 @@ export async function getLiveSuggestion(input: {
   frame: string;
   targetVibe: string;
   currentTopic?: string;
+  voiceContext?: {
+    currentUtterance?: string;
+    recentUtterances?: string[];
+    isListening?: boolean;
+    conversationTurns?: Array<{
+      role: "me" | "partner";
+      text: string;
+    }>;
+  };
   language?: string;
 }): Promise<LLMResponse<LiveSuggestionData>> {
   return llmFetch<LiveSuggestionData>("/api/realtime-coach", {
     frame: input.frame,
     targetVibe: input.targetVibe,
     currentTopic: input.currentTopic ?? "",
+    voiceContext: {
+      currentUtterance: input.voiceContext?.currentUtterance ?? "",
+      recentUtterances: input.voiceContext?.recentUtterances ?? [],
+      isListening: input.voiceContext?.isListening ?? false,
+      conversationTurns: input.voiceContext?.conversationTurns ?? [],
+    },
     language: input.language ?? "Respond in English.",
+  });
+}
+
+// ============================================================================
+// Academy: SIQ Grading + Narrative Summary
+// ============================================================================
+
+export async function gradeInteraction(input: {
+  userId: string;
+  transcript: LLMInteractionTurn[];
+  targetVibe: {
+    label: string;
+    interests?: string[];
+  };
+  missionContext?: {
+    missionType?: "solo_practice" | "live_quest";
+    missionTitle?: string;
+  };
+  useMock?: boolean;
+}): Promise<LLMResponse<LLMInteractionGradeData>> {
+  return llmFetch<LLMInteractionGradeData>("/api/grade-interaction", {
+    userId: input.userId,
+    transcript: input.transcript,
+    targetVibe: input.targetVibe,
+    missionContext: input.missionContext,
+    useMock: input.useMock ?? false,
+  });
+}
+
+export async function getUserSummaryNarrative(input: {
+  userId: string;
+  vibeLabel: string;
+  interests?: string[];
+  siqScore: number;
+  initiation: number;
+  empathy: number;
+  planning: number;
+  consistency: number;
+}): Promise<LLMResponse<LLMUserSummaryNarrativeData>> {
+  return llmGet<LLMUserSummaryNarrativeData>("/api/user-summary-narrative", {
+    userId: input.userId,
+    vibeLabel: input.vibeLabel,
+    interests: (input.interests ?? []).join(","),
+    siqScore: input.siqScore,
+    initiation: input.initiation,
+    empathy: input.empathy,
+    planning: input.planning,
+    consistency: input.consistency,
   });
 }

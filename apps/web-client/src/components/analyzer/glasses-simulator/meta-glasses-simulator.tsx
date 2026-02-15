@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import { useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
+import { motion } from "framer-motion";
 
 import type {
   GlassesFrameType,
@@ -45,8 +46,39 @@ export function MetaGlassesSimulator({
   const [nightVision, setNightVision] = useState(false);
   const [screenshotFlash, setScreenshotFlash] = useState(false);
   const [contextEntries, setContextEntries] = useState<ContextEntry[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
 
   const languageRef = useRef(language);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("glasses_simulator_tts_muted");
+      if (saved === "1") setIsMuted(true);
+    } catch {
+      // ignore localStorage errors
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        "glasses_simulator_tts_muted",
+        isMuted ? "1" : "0",
+      );
+    } catch {
+      // ignore localStorage errors
+    }
+  }, [isMuted]);
+
+  useEffect(() => {
+    const updateIsMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    updateIsMobile();
+    window.addEventListener("resize", updateIsMobile);
+    return () => window.removeEventListener("resize", updateIsMobile);
+  }, []);
 
   /* ── Hooks ── */
   const config = useGlassesTheme(frameType);
@@ -86,6 +118,15 @@ export function MetaGlassesSimulator({
     [speech],
   );
 
+  const handleCycleLanguage = useCallback(() => {
+    const currentIndex = LANGUAGES.findIndex(
+      (item) => item.code === languageRef.current.code,
+    );
+    const next =
+      LANGUAGES[(currentIndex + 1) % LANGUAGES.length] ?? LANGUAGES[0]!;
+    handleLanguageChange(next);
+  }, [handleLanguageChange]);
+
   /* ── Screenshot ── */
   const captureScreenshot = useCallback(() => {
     const dataUrl = webcamRef.current?.getScreenshot();
@@ -116,10 +157,31 @@ export function MetaGlassesSimulator({
     );
     pushContext("environment", "Frame scan", "Analysing visual feed...");
     try {
+      const conversationTurns = [
+        ...speech.recentUtterances.map((text) => ({
+          role: "partner" as const,
+          text,
+        })),
+        ...(lastSpokenSuggestionRef.current
+          ? [
+              {
+                role: "me" as const,
+                text: lastSpokenSuggestionRef.current,
+              },
+            ]
+          : []),
+      ].slice(-6);
+
       const res = await liveSuggestionMutation.mutateAsync({
         frame: base64,
         targetVibe,
         currentTopic: speech.currentTopic,
+        voiceContext: {
+          currentUtterance: speech.voiceInput,
+          recentUtterances: speech.recentUtterances,
+          isListening: speech.isListening,
+          conversationTurns,
+        },
         language: languageRef.current.promptHint,
       });
       const next = res.suggestion.trim();
@@ -202,104 +264,129 @@ export function MetaGlassesSimulator({
       {/* Inject keyframes once */}
       <style dangerouslySetInnerHTML={{ __html: HUD_STYLES }} />
 
-      <div className="space-y-5">
+      <div className="space-y-0 md:space-y-5">
         {/* ── Glasses viewport ── */}
-        <div
-          className="relative mx-auto w-full max-w-5xl rounded-3xl bg-black/80 shadow-[0_0_80px_rgba(0,0,0,0.6)]"
-          style={{
-            clipPath: config.clipPath,
-            transform: "translateZ(0)",
-            willChange: "transform",
-          }}
+        <motion.div
+          layout
+          transition={{ type: "spring", stiffness: 220, damping: 28 }}
+          className="relative overflow-hidden bg-black/80"
+          style={
+            isMobile
+              ? {
+                  position: "fixed",
+                  inset: 0,
+                  zIndex: 20,
+                  transform: "translateZ(0)",
+                  willChange: "transform",
+                }
+              : {
+                  width: "100%",
+                  maxWidth: "80rem",
+                  marginInline: "auto",
+                  borderRadius: "1.5rem",
+                  boxShadow: "0 0 80px rgba(0,0,0,0.6)",
+                  clipPath: config.clipPath,
+                  transform: "translateZ(0)",
+                  willChange: "transform",
+                }
+          }
         >
-          <div className="relative aspect-5/4 w-full sm:aspect-video">
-            {/* Camera feed */}
-            <Webcam
-              ref={webcamRef}
-              audio={false}
-              mirrored
-              screenshotFormat="image/jpeg"
-              screenshotQuality={0.55}
-              videoConstraints={{
-                width: 640,
-                height: 360,
-                facingMode: "user",
-              }}
-              className="h-full w-full object-cover"
-            />
+          <motion.div
+            layout
+            transition={{ type: "spring", stiffness: 220, damping: 28 }}
+            className="relative w-full"
+            style={isMobile ? { height: "100dvh" } : undefined}
+          >
+            <div className="relative h-[100dvh] w-full md:aspect-video md:h-auto">
+              {/* Camera feed */}
+              <Webcam
+                ref={webcamRef}
+                audio={false}
+                mirrored
+                screenshotFormat="image/jpeg"
+                screenshotQuality={0.55}
+                videoConstraints={{
+                  width: 640,
+                  height: 360,
+                  facingMode: "user",
+                }}
+                className="h-full w-full object-cover"
+              />
 
-            {/* Theme overlay tint */}
-            <div
-              className={`pointer-events-none absolute inset-0 ${theme.overlayClass}`}
-            />
-
-            {/* Night vision overlay */}
-            {nightVision && (
+              {/* Theme overlay tint */}
               <div
-                className="pointer-events-none absolute inset-0"
+                className={`pointer-events-none absolute inset-0 ${theme.overlayClass}`}
+              />
+
+              {/* Night vision overlay */}
+              {nightVision && (
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(0,40,0,0.45) 0%, rgba(0,60,0,0.35) 50%, rgba(0,40,0,0.45) 100%)",
+                    mixBlendMode: "multiply",
+                  }}
+                />
+              )}
+
+              {/* Digital noise grain */}
+              <div
+                className="pointer-events-none absolute inset-0 mix-blend-screen opacity-[0.035]"
                 style={{
-                  background:
-                    "linear-gradient(180deg, rgba(0,40,0,0.45) 0%, rgba(0,60,0,0.35) 50%, rgba(0,40,0,0.45) 100%)",
-                  mixBlendMode: "multiply",
+                  backgroundImage:
+                    "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")",
+                  backgroundSize: "128px 128px",
+                  animation: "hud-grain 0.4s steps(3) infinite",
+                  willChange: "transform",
                 }}
               />
-            )}
 
-            {/* Digital noise grain */}
-            <div
-              className="pointer-events-none absolute inset-0 mix-blend-screen opacity-[0.035]"
-              style={{
-                backgroundImage:
-                  "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")",
-                backgroundSize: "128px 128px",
-                animation: "hud-grain 0.4s steps(3) infinite",
-                willChange: "transform",
-              }}
-            />
+              {/* Chromatic aberration */}
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.012]"
+                style={{
+                  background:
+                    "linear-gradient(90deg, rgba(255,0,0,0.15) 0%, transparent 33%, transparent 66%, rgba(0,0,255,0.15) 100%)",
+                  mixBlendMode: "screen",
+                }}
+              />
 
-            {/* Chromatic aberration */}
-            <div
-              className="pointer-events-none absolute inset-0 opacity-[0.012]"
-              style={{
-                background:
-                  "linear-gradient(90deg, rgba(255,0,0,0.15) 0%, transparent 33%, transparent 66%, rgba(0,0,255,0.15) 100%)",
-                mixBlendMode: "screen",
-              }}
-            />
+              {/* Scanline */}
+              <div
+                className={`pointer-events-none absolute left-0 right-0 h-px ${theme.scanline} blur-[0.5px]`}
+                style={{
+                  boxShadow: `0 0 12px ${theme.glow}`,
+                  animation: "hud-scanline 4s linear infinite",
+                  willChange: "transform",
+                }}
+              />
 
-            {/* Scanline */}
-            <div
-              className={`pointer-events-none absolute left-0 right-0 h-px ${theme.scanline} blur-[0.5px]`}
-              style={{
-                boxShadow: `0 0 12px ${theme.glow}`,
-                animation: "hud-scanline 4s linear infinite",
-                willChange: "transform",
-              }}
-            />
-
-            {/* ── HUD Overlay (all in-lens elements) ── */}
-            <HudOverlay
-              config={config}
-              theme={theme}
-              frameType={frameType}
-              clockStr={clockStr}
-              nightVision={nightVision}
-              language={language}
-              languages={LANGUAGES}
-              onLanguageChange={handleLanguageChange}
-              suggestion={suggestion}
-              visualCue={visualCue}
-              isPending={liveSuggestionMutation.isPending}
-              isListening={speech.isListening}
-              voiceInput={speech.voiceInput}
-              diagnosticLog={diagnosticLog}
-              contextEntries={contextEntries}
-              confidence={confidence}
-              targetVibe={targetVibe}
-              screenshotFlash={screenshotFlash}
-            />
-          </div>
-        </div>
+              {/* ── HUD Overlay (all in-lens elements) ── */}
+              <HudOverlay
+                config={config}
+                theme={theme}
+                frameType={frameType}
+                clockStr={clockStr}
+                nightVision={nightVision}
+                language={language}
+                languages={LANGUAGES}
+                onLanguageChange={handleLanguageChange}
+                suggestion={suggestion}
+                visualCue={visualCue}
+                isPending={liveSuggestionMutation.isPending}
+                isListening={speech.isListening}
+                voiceInput={speech.voiceInput}
+                diagnosticLog={diagnosticLog}
+                contextEntries={contextEntries}
+                confidence={confidence}
+                targetVibe={targetVibe}
+                screenshotFlash={screenshotFlash}
+                isMobile={isMobile}
+              />
+            </div>
+          </motion.div>
+        </motion.div>
 
         {/* ── Controls (outside lens) ── */}
         <ControlsBar
@@ -319,6 +406,10 @@ export function MetaGlassesSimulator({
           isListening={speech.isListening}
           theme={theme}
           confidencePct={confidencePct}
+          isMobile={isMobile}
+          languageCode={language.code}
+          languageFlag={language.flag}
+          onCycleLanguage={handleCycleLanguage}
         />
       </div>
     </>

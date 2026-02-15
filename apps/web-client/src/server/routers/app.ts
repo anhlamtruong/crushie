@@ -8,6 +8,7 @@ import { socialRouter } from "@/services/social/procedures";
 import { missionsRouter } from "@/services/missions/procedures";
 import { verificationRouter } from "@/services/verification/procedures";
 import { llmRouter } from "@/services/llm/procedures";
+import { academyRouter } from "@/services/academy/procedures";
 import { uploadsRouter } from "@/services/uploads/procedures";
 import { environmentRouter } from "@/services/environment/procedures";
 import { realtimeRouter } from "@/services/realtime/procedures";
@@ -53,6 +54,7 @@ export const appRouter = createTRPCRouter({
   missions: missionsRouter,
   verification: verificationRouter,
   llm: llmRouter,
+  academy: academyRouter,
   realtime: realtimeRouter,
   uploads: uploadsRouter,
   environment: environmentRouter,

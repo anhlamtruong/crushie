@@ -7,6 +7,27 @@ const inputSchema = z.object({
   frame: z.string().min(1, "frame is required"),
   targetVibe: z.string().min(1, "targetVibe is required"),
   currentTopic: z.string().default(""),
+  voiceContext: z
+    .object({
+      currentUtterance: z.string().max(500).optional().default(""),
+      recentUtterances: z
+        .array(z.string().max(500))
+        .max(5)
+        .optional()
+        .default([]),
+      isListening: z.boolean().optional().default(false),
+      conversationTurns: z
+        .array(
+          z.object({
+            role: z.enum(["me", "partner"]),
+            text: z.string().max(500),
+          }),
+        )
+        .max(8)
+        .optional()
+        .default([]),
+    })
+    .optional(),
   language: z.string().default("Respond in English."),
 });
 
@@ -18,6 +39,7 @@ export const getLiveSuggestion = authedProcedure
         frame: input.frame,
         targetVibe: input.targetVibe,
         currentTopic: input.currentTopic,
+        voiceContext: input.voiceContext,
         language: input.language,
       });
 

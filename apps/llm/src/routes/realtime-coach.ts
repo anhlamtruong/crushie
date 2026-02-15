@@ -3,6 +3,7 @@ import { z } from "zod";
 import { generateMultimodalJSON, type ImageInput } from "../lib/gemini.js";
 import { requireServiceToken } from "../lib/auth.js";
 import { streamWingmanSpeech } from "../lib/elevenlabs.js";
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 const router = Router();
 
@@ -10,6 +11,27 @@ const realtimeSuggestionSchema = z.object({
   frame: z.string().min(32, "frame is required").max(4_000_000),
   targetVibe: z.string().min(1, "targetVibe is required").max(120),
   currentTopic: z.string().max(200).optional().default(""),
+  voiceContext: z
+    .object({
+      currentUtterance: z.string().max(500).optional().default(""),
+      recentUtterances: z
+        .array(z.string().max(500))
+        .max(5)
+        .optional()
+        .default([]),
+      isListening: z.boolean().optional().default(false),
+      conversationTurns: z
+        .array(
+          z.object({
+            role: z.enum(["me", "partner"]),
+            text: z.string().max(500),
+          }),
+        )
+        .max(8)
+        .optional()
+        .default([]),
+    })
+    .optional(),
   language: z.string().max(100).optional().default("Respond in English."),
 });
 
@@ -79,6 +101,44 @@ router.post("/", requireServiceToken(), async (req, res) => {
       mimeType: "image/jpeg",
     };
 
+    const currentUtterance =
+      parsed.voiceContext?.currentUtterance?.trim() ?? "";
+    const recentUtterances = (parsed.voiceContext?.recentUtterances ?? [])
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0)
+      .slice(-3);
+
+    const roleTaggedTurns = (parsed.voiceContext?.conversationTurns ?? [])
+      .map((turn) => ({
+        role: turn.role,
+        text: turn.text.trim(),
+      }))
+      .filter((turn) => turn.text.length > 0)
+      .slice(-6);
+
+    const roleTaggedDialogue =
+      roleTaggedTurns.length > 0
+        ? roleTaggedTurns
+            .map(
+              (turn, index) =>
+                `${index + 1}) ${turn.role.toUpperCase()}: "${turn.text}"`,
+            )
+            .join(" ")
+        : "none";
+
+    const voiceContextBlock = [
+      currentUtterance
+        ? `Latest heard speech: "${currentUtterance}".`
+        : "Latest heard speech: not captured.",
+      recentUtterances.length > 0
+        ? `Recent speech snippets: ${recentUtterances.map((item, index) => `${index + 1}) "${item}"`).join(" ")}`
+        : "Recent speech snippets: none.",
+      `Role-tagged dialogue turns: ${roleTaggedDialogue}.`,
+      parsed.voiceContext?.isListening
+        ? "Mic status: actively listening."
+        : "Mic status: idle.",
+    ].join(" ");
+
     const prompt = [
       "You are a live dating coach with a warm, supportive wingman tone.",
       "Analyze the camera frame and infer immediate social cues from person/environment.",
@@ -86,6 +146,9 @@ router.post("/", requireServiceToken(), async (req, res) => {
       parsed.currentTopic
         ? `Current topic in conversation: ${parsed.currentTopic}.`
         : "Current topic in conversation: not provided.",
+      voiceContextBlock,
+      "Use role tags carefully: PARTNER lines are what the other person said; ME lines are what user likely said recently. Keep your next suggestion aligned as the user's next line.",
+      "If role-tagged context is empty, rely more on visual cues and current topic.",
       parsed.language,
       "Output STRICT JSON only with keys: suggestion, visual_cue_detected, confidence.",
       "suggestion: one sentence user can say right now, natural and specific. Must be in the specified language.",
@@ -190,6 +253,28 @@ router.post("/tts", requireServiceToken(), async (req, res) => {
     res.status(500).json({
       error: "Failed to synthesize speech",
       message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+router.get("/stt-token", requireServiceToken(), async (_req, res) => {
+  try {
+    const apiKey = process.env.ELEVENLABS_API_KEY || "";
+    if (!apiKey) {
+      res.status(503).json({
+        error: "Speech-to-text is not configured",
+      });
+      return;
+    }
+
+    const client = new ElevenLabsClient({ apiKey });
+    const token = await client.tokens.singleUse.create("realtime_scribe");
+
+    res.json({ data: token });
+  } catch (error) {
+    console.error("❌ realtime-coach stt-token failed:", error);
+    res.status(500).json({
+      error: "Failed to create realtime STT token",
     });
   }
 });

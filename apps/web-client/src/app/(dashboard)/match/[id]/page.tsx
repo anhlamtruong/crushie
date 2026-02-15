@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Heart,
@@ -36,8 +37,17 @@ function formatSimilarity(value: number | null | undefined): string {
 export default function MatchMissionBriefingPage() {
   const params = useParams<{ id: string }>();
   const matchId = params?.id;
+  const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+
+  const academyStats = useQuery(trpc.academy.getStats.queryOptions());
+
+  useEffect(() => {
+    if (academyStats.data?.academyGate.shouldRedirectToAcademy) {
+      router.replace("/academy");
+    }
+  }, [academyStats.data?.academyGate.shouldRedirectToAcademy, router]);
 
   const matchPlanQuery = useQuery(
     trpc.social.getMatchPlan.queryOptions(
@@ -98,7 +108,7 @@ export default function MatchMissionBriefingPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight text-rose-600">
+        <h1 className="text-foreground text-3xl font-semibold tracking-tight">
           Mission Briefing
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -107,9 +117,9 @@ export default function MatchMissionBriefingPage() {
         </p>
       </div>
 
-      <Card className="border-rose-200 bg-pink-50/60">
+      <Card className="border-border bg-card/80">
         <CardHeader>
-          <CardTitle className="text-rose-600">
+          <CardTitle className="text-primary">
             Dual Acceptance Protocol
           </CardTitle>
           <CardDescription>
@@ -134,7 +144,7 @@ export default function MatchMissionBriefingPage() {
           <div className="flex items-center gap-2">
             {canGenerate && (
               <Button
-                className="bg-rose-500 text-white hover:bg-rose-600"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => {
                   if (!matchId) return;
                   generatePlanMutation.mutate({ matchId });
@@ -155,7 +165,7 @@ export default function MatchMissionBriefingPage() {
             )}
             {canAccept && (
               <Button
-                className="bg-rose-500 text-white hover:bg-rose-600"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => {
                   acceptMissionMutation.mutate({
                     instanceId: plan.missionInstanceId as string,
@@ -181,11 +191,11 @@ export default function MatchMissionBriefingPage() {
 
       {isBusy ? (
         <div className="grid gap-4 md:grid-cols-3">
-          <Skeleton className="h-52 bg-rose-100" />
-          <Skeleton className="h-52 bg-rose-100 md:col-span-2" />
+          <Skeleton className="h-52" />
+          <Skeleton className="h-52 md:col-span-2" />
         </div>
       ) : !plan ? (
-        <Card className="border-dashed border-rose-200">
+        <Card className="border-border border-dashed">
           <CardContent className="py-12 text-center">
             <p className="text-sm text-muted-foreground">
               Generate the mission plan to unlock Vibe Link, Mission Card, and
@@ -200,9 +210,9 @@ export default function MatchMissionBriefingPage() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-4"
           >
-            <Card className="border-rose-200">
+            <Card className="border-border">
               <CardHeader className="space-y-1">
-                <CardTitle className="text-base text-rose-600">
+                <CardTitle className="text-primary text-base">
                   The Vibe Link
                 </CardTitle>
                 <CardDescription>
@@ -214,7 +224,7 @@ export default function MatchMissionBriefingPage() {
                   <span className="font-medium">
                     {plan.userA?.displayName ?? "User A"}
                   </span>
-                  <Heart className="h-4 w-4 text-rose-500" />
+                  <Heart className="text-primary h-4 w-4" />
                   <span className="font-medium">
                     {plan.userB?.displayName ?? "User B"}
                   </span>
@@ -223,16 +233,16 @@ export default function MatchMissionBriefingPage() {
                   <p className="text-xs text-muted-foreground">
                     Similarity Score
                   </p>
-                  <p className="text-2xl font-semibold text-rose-600">
+                  <p className="text-primary text-2xl font-semibold">
                     {formatSimilarity(plan.similarityScore)}
                   </p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-rose-200">
+            <Card className="border-border">
               <CardHeader>
-                <CardTitle className="text-base text-rose-600">
+                <CardTitle className="text-primary text-base">
                   Probability Meter
                 </CardTitle>
                 <CardDescription>
@@ -259,13 +269,14 @@ export default function MatchMissionBriefingPage() {
                       r="48"
                       strokeWidth="10"
                       fill="none"
-                      className="stroke-rose-500 transition-all duration-700"
+                      style={{ stroke: "hsl(var(--primary))" }}
+                      className="transition-all duration-700"
                       strokeDasharray={`${(meterProgress / 100) * 301.59} 301.59`}
                       strokeLinecap="round"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <Heart className="h-5 w-5 fill-rose-500 text-rose-500" />
+                    <Heart className="text-primary h-5 w-5 fill-current" />
                     <span className="text-sm font-semibold">
                       {formatPercent(plan.successProbability)}
                     </span>
@@ -281,7 +292,7 @@ export default function MatchMissionBriefingPage() {
             transition={{ delay: 0.05 }}
             className="md:col-span-2"
           >
-            <Card className="overflow-hidden border-rose-200">
+            <Card className="border-border overflow-hidden">
               <div className="relative h-48 w-full bg-muted">
                 {plan.mission?.photoUrl ? (
                   <img
@@ -293,7 +304,7 @@ export default function MatchMissionBriefingPage() {
                   />
                 ) : (
                   <div
-                    className={`h-full w-full bg-linear-to-r from-rose-100 to-pink-100 transition-all duration-500 ${
+                    className={`bg-muted h-full w-full transition-all duration-500 ${
                       missionLocked ? "blur-md" : "blur-0"
                     }`}
                   />
@@ -310,7 +321,7 @@ export default function MatchMissionBriefingPage() {
                 </div>
               </div>
               <CardHeader>
-                <CardTitle className="text-xl text-rose-600">
+                <CardTitle className="text-primary text-xl">
                   {plan.mission?.title ?? "Mission"}
                 </CardTitle>
                 <CardDescription>
@@ -325,9 +336,9 @@ export default function MatchMissionBriefingPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
                     transition={{ duration: 0.2 }}
-                    className={`rounded-lg border p-4 ${missionLocked ? "border-rose-200 bg-rose-50/70" : "border-border bg-card"}`}
+                    className={`rounded-lg border p-4 ${missionLocked ? "border-border bg-muted/60" : "border-border bg-card"}`}
                   >
-                    <div className="mb-2 flex items-center gap-2 text-sm font-medium text-rose-600">
+                    <div className="text-primary mb-2 flex items-center gap-2 text-sm font-medium">
                       <Target className="h-4 w-4" />
                       Mission Task
                     </div>

@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import { Heart, Sparkles, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { VibeCard } from "@/components/discover/vibe-card";
 import { Button } from "@/components/ui/button";
+import { useTRPC } from "@/trpc/client";
 import {
   Card,
   CardContent,
@@ -24,6 +27,10 @@ function buildCompatibilityNarrative(profile: MockMatchProfile) {
 }
 
 export default function DiscoverPage() {
+  const trpc = useTRPC();
+  const router = useRouter();
+  const academyStats = useQuery(trpc.academy.getStats.queryOptions());
+
   const [profiles, setProfiles] = useState<MockMatchProfile[]>(MOCK_MATCHES);
   const [likedIds, setLikedIds] = useState<string[]>([]);
   const [modalProfile, setModalProfile] = useState<MockMatchProfile | null>(
@@ -58,6 +65,12 @@ export default function DiscoverPage() {
   }
 
   useEffect(() => {
+    if (academyStats.data?.academyGate.shouldRedirectToAcademy) {
+      router.replace("/academy");
+    }
+  }, [academyStats.data?.academyGate.shouldRedirectToAcademy, router]);
+
+  useEffect(() => {
     if (!modalProfile) return;
     const timer = setTimeout(() => {
       setIsThinking(false);
@@ -69,7 +82,7 @@ export default function DiscoverPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight text-rose-600">
+        <h1 className="text-foreground text-3xl font-semibold tracking-tight">
           Valentine Discover
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -77,9 +90,9 @@ export default function DiscoverPage() {
         </p>
       </div>
 
-      <Card className="border-rose-100 bg-pink-50/70">
+      <Card className="border-border bg-card/80">
         <CardHeader>
-          <CardTitle className="text-base text-rose-600">
+          <CardTitle className="text-primary text-base">
             Session Stats
           </CardTitle>
           <CardDescription>
@@ -102,16 +115,16 @@ export default function DiscoverPage() {
           ))}
         </div>
       ) : (
-        <Card className="border-rose-200 bg-pink-50">
+        <Card className="border-border bg-card/80">
           <CardContent className="flex min-h-48 flex-col items-center justify-center gap-3 py-10 text-center">
-            <Sparkles className="h-7 w-7 text-rose-500" />
-            <p className="font-medium text-rose-600">No more vibes right now</p>
+            <Sparkles className="text-primary h-7 w-7" />
+            <p className="text-primary font-medium">No more vibes right now</p>
             <p className="max-w-md text-sm text-muted-foreground">
               You reviewed all mock profiles. Refresh to restart this focused
               session.
             </p>
             <Button
-              className="bg-rose-500 text-white hover:bg-rose-600"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={() => {
                 setProfiles(MOCK_MATCHES);
                 setLikedIds([]);
@@ -129,7 +142,7 @@ export default function DiscoverPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={() => setModalProfile(null)}
           >
             <motion.div
@@ -140,10 +153,10 @@ export default function DiscoverPage() {
               className="w-full max-w-xl"
               onClick={(event) => event.stopPropagation()}
             >
-              <Card className="border-rose-200 bg-white">
+              <Card className="border-border bg-card">
                 <CardHeader className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg text-rose-600">
+                    <CardTitle className="text-primary text-lg">
                       Why you match with {modalProfile.displayName}
                     </CardTitle>
                     <Button
@@ -161,9 +174,9 @@ export default function DiscoverPage() {
                 <CardContent>
                   {isThinking ? (
                     <div className="space-y-3">
-                      <Skeleton className="h-4 w-full bg-rose-100" />
-                      <Skeleton className="h-4 w-[95%] bg-rose-100" />
-                      <Skeleton className="h-4 w-[90%] bg-rose-100" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-[95%]" />
+                      <Skeleton className="h-4 w-[90%]" />
                     </div>
                   ) : (
                     <p className="leading-relaxed text-card-foreground">
@@ -183,7 +196,7 @@ export default function DiscoverPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-rose-900/40 p-4"
+            className="bg-background/85 fixed inset-0 z-50 flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 12 }}
@@ -192,12 +205,12 @@ export default function DiscoverPage() {
               transition={{ type: "spring", stiffness: 280, damping: 22 }}
               className="w-full max-w-md"
             >
-              <Card className="border-rose-300 bg-pink-50 text-center">
+              <Card className="border-border bg-card text-center">
                 <CardContent className="space-y-3 py-8">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-500 text-white">
+                  <div className="bg-primary text-primary-foreground mx-auto flex h-12 w-12 items-center justify-center rounded-full">
                     <Heart className="h-6 w-6" />
                   </div>
-                  <p className="text-2xl font-semibold text-rose-600">
+                  <p className="text-primary text-2xl font-semibold">
                     It&apos;s a Vibe!
                   </p>
                   <p className="text-sm text-muted-foreground">
@@ -205,7 +218,7 @@ export default function DiscoverPage() {
                     while the spark is hot.
                   </p>
                   <Button
-                    className="bg-rose-500 text-white hover:bg-rose-600"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                     onClick={() => setShowAutoMatch(false)}
                   >
                     Keep Exploring

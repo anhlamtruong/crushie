@@ -15,18 +15,20 @@ export function CrushieDisplay({
   isPending,
   theme,
   languageFlag,
+  compactMobile = false,
 }: {
   suggestion: string;
   visualCue: string;
   isPending: boolean;
   theme: GlassesTheme;
   languageFlag: string;
+  compactMobile?: boolean;
 }) {
   return (
     <div
-      className={`pointer-events-none flex flex-col gap-1 rounded-lg ${theme.border} border ${theme.panelBg} px-2.5 py-2 backdrop-blur-md`}
+      className={`pointer-events-none flex flex-col ${compactMobile ? "gap-0.5 rounded-xl px-2 py-1.5" : "gap-1 rounded-lg px-2.5 py-2"} ${theme.border} border ${theme.panelBg} backdrop-blur-md`}
       style={{
-        maxWidth: "min(56%, 280px)",
+        maxWidth: compactMobile ? "100%" : "min(56%, 280px)",
         willChange: "transform",
         transform: "translateZ(0)",
         filter: `drop-shadow(0 0 8px ${theme.glow})`,
@@ -46,15 +48,19 @@ export function CrushieDisplay({
 
       {/* Suggestion — gradient-mask, NO overflow-hidden */}
       <div
-        style={{
-          maskImage:
-            "linear-gradient(to bottom, transparent 0%, black 6%, black 88%, transparent 100%)",
-          WebkitMaskImage:
-            "linear-gradient(to bottom, transparent 0%, black 6%, black 88%, transparent 100%)",
-        }}
+        style={
+          compactMobile
+            ? undefined
+            : {
+                maskImage:
+                  "linear-gradient(to bottom, transparent 0%, black 6%, black 88%, transparent 100%)",
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, transparent 0%, black 6%, black 88%, transparent 100%)",
+              }
+        }
       >
         <p
-          className={`font-mono text-[10px] leading-relaxed ${theme.text}`}
+          className={`font-mono ${compactMobile ? "text-[9px] leading-normal" : "text-[10px] leading-relaxed"} ${theme.text}`}
           style={{ textShadow: `0 0 8px ${theme.glow}` }}
         >
           {suggestion}
@@ -63,7 +69,7 @@ export function CrushieDisplay({
 
       {/* Visual cue */}
       <p
-        className={`font-mono text-[7px] uppercase tracking-widest ${theme.textDim}`}
+        className={`font-mono ${compactMobile ? "text-[6px] tracking-[0.18em]" : "text-[7px] tracking-widest"} uppercase ${theme.textDim}`}
       >
         cue: {visualCue}
       </p>
